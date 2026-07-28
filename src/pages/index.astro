@@ -1,0 +1,54 @@
+---
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'ExperienceHub | Curated dining experiences';
+const description =
+  'Discover thoughtfully curated dining experiences and packages across remarkable destinations.';
+---
+
+<BaseLayout title={title} description={description}>
+  <SiteHeader />
+
+  <main>
+    <section class="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+      <p class="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">
+        Dining, thoughtfully curated
+      </p>
+      <h1
+        class="max-w-4xl text-5xl font-semibold tracking-tight text-balance sm:text-7xl"
+      >
+        ExperienceHub
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg leading-8 text-stone-600 sm:text-xl">
+        Discover memorable dining experiences and carefully considered packages
+        across remarkable destinations.
+      </p>
+      <a
+        class="mt-10 inline-flex rounded-full bg-stone-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-stone-900"
+        href="#experiences"
+      >
+        Explore experiences
+      </a>
+    </section>
+
+    <section
+      id="experiences"
+      class="border-t border-stone-200 bg-white"
+      aria-labelledby="experiences-heading"
+    >
+      <div class="mx-auto max-w-6xl px-6 py-20">
+        <h2 id="experiences-heading" class="text-2xl font-semibold tracking-tight">
+          Experiences are coming soon
+        </h2>
+        <p class="mt-3 max-w-2xl leading-7 text-stone-600">
+          This foundation will grow into a curated collection of distinctive
+          restaurant experiences.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</BaseLayout>

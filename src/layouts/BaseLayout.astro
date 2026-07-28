@@ -1,0 +1,40 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalURL?: URL | string;
+  ogType?: 'website' | 'article';
+}
+
+const {
+  title = 'ExperienceHub | Curated dining experiences',
+  description = 'Discover thoughtfully curated dining experiences and packages in remarkable destinations.',
+  canonicalURL,
+  ogType = 'website',
+} = Astro.props;
+
+const canonical = canonicalURL
+  ? new URL(canonicalURL, Astro.url).toString()
+  : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={ogType} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body class="bg-stone-50 text-stone-900 antialiased">
+    <slot />
+  </body>
+</html>
