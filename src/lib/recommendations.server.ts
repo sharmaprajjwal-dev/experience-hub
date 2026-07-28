@@ -413,12 +413,7 @@ function validateModelResponse(
 ): ValidatedModelResponse | null {
   if (!rawContent || rawContent.length > 6_000) return null;
 
-  let value: unknown;
-  try {
-    value = JSON.parse(rawContent);
-  } catch {
-    return null;
-  }
+  const value = parseModelJson(rawContent);
   if (!isPlainObject(value)) return null;
   if (!Array.isArray(value.recommendations) || value.recommendations.length > 3) {
     return null;
@@ -474,6 +469,18 @@ function validateModelResponse(
     followUpQuestion,
     noMatchReason,
   };
+}
+
+function parseModelJson(rawContent: string): unknown {
+  const trimmed = rawContent.trim();
+  const fencedMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  const candidate = fencedMatch?.[1] ?? trimmed;
+
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    return null;
+  }
 }
 
 function buildDeterministicFallback(
