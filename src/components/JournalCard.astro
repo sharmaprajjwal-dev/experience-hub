@@ -8,6 +8,7 @@ interface Props {
 }
 
 const { entry, featured = false } = Astro.props;
+const usesImage = !entry.data.featuredImage.startsWith('media-');
 ---
 
 <article
@@ -19,12 +20,25 @@ const { entry, featured = false } = Astro.props;
   <div
     class:list={[
       'media-frame',
-      entry.data.featuredImage,
+      !usesImage && entry.data.featuredImage,
       featured ? 'min-h-72 lg:min-h-full' : 'aspect-[16/10]',
     ]}
-    role="img"
-    aria-label={entry.data.imageAlt}
+    role={!usesImage ? 'img' : undefined}
+    aria-label={!usesImage ? entry.data.imageAlt : undefined}
   >
+    {
+      usesImage && (
+        <img
+          class="absolute inset-0 h-full w-full object-cover"
+          src={entry.data.featuredImage}
+          alt={entry.data.imageAlt}
+          width="1600"
+          height="1200"
+          loading="lazy"
+          decoding="async"
+        />
+      )
+    }
     {
       featured && (
         <span class="absolute top-5 left-5 z-10 rounded-full bg-surface px-3 py-1 text-[0.68rem] font-bold tracking-[0.16em] text-ink uppercase">

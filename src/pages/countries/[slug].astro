@@ -70,13 +70,17 @@ const description = country.data.shortDescription;
                   <div
                     class:list={[
                       'media-frame aspect-[16/9]',
-                      !data.heroImage.startsWith('http') && data.heroImage,
+                      data.heroImage.startsWith('media-') && data.heroImage,
                     ]}
-                    role="img"
-                    aria-label={data.imageAlt ?? `${data.name} in ${data.city}`}
+                    role={data.heroImage.startsWith('media-') ? 'img' : undefined}
+                    aria-label={
+                      data.heroImage.startsWith('media-')
+                        ? data.imageAlt ?? `${data.name} in ${data.city}`
+                        : undefined
+                    }
                   >
                     {
-                      data.heroImage.startsWith('http') && (
+                      !data.heroImage.startsWith('media-') && (
                         <img
                           class="absolute inset-0 h-full w-full object-cover"
                           src={data.heroImage}
@@ -138,6 +142,9 @@ const description = country.data.shortDescription;
                     description={experience.data.shortDescription}
                     packageName={`${relatedPackages.length} ${relatedPackages.length === 1 ? 'package' : 'packages'} available`}
                     mediaClass={experience.data.heroImage}
+                    imageAlt={experience.data.imageAlt}
+                    imageWidth={experience.data.imageWidth}
+                    imageHeight={experience.data.imageHeight}
                     href={`/experiences/${experience.data.slug}`}
                   />
                 );

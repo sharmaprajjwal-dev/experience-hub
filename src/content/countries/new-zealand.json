@@ -3,7 +3,10 @@
   "slug": "new-zealand",
   "countryCode": "NZ",
   "shortDescription": "Calm coastal settings, thoughtful local produce, and unhurried experiences made for meaningful occasions.",
-  "heroImage": "media-new-zealand",
+  "heroImage": "/images/auckland-harbour.jpg",
+  "imageAlt": "Auckland Harbour Bridge silhouetted against an orange sunset",
+  "imageWidth": 1600,
+  "imageHeight": 1007,
   "currencyCode": "NZD",
   "active": true
 }

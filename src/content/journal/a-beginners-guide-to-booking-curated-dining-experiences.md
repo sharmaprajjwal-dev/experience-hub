@@ -5,8 +5,8 @@ publicationDate: 2026-07-22
 author: ExperienceHub Editorial
 category: Dining Guides
 country: nepal
-featuredImage: media-journal-guide
-imageAlt: Abstract terracotta and cream placeholder artwork suggesting a dining itinerary
+featuredImage: /images/kathmandu-dining.jpg
+imageAlt: Momo and accompanying Nepalese dishes gathered around a table in Kathmandu
 draft: false
 featured: false
 seoTitle: Beginner’s Guide to Curated Dining Experiences | ExperienceHub

@@ -7,9 +7,13 @@ const slug = z
   .min(1)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
-const heroImage = z
-  .string()
-  .regex(/^media-[a-z0-9]+(?:-[a-z0-9]+)*$/);
+const heroImage = z.string().refine(
+  (value) =>
+    /^media-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ||
+    /^\/images\/[a-z0-9]+(?:-[a-z0-9]+)*\.(?:avif|jpe?g|png|webp)$/.test(value) ||
+    /^https?:\/\//.test(value),
+  'Hero images must be a media class, a local /images path, or an absolute URL',
+);
 
 const countries = defineCollection({
   loader: glob({

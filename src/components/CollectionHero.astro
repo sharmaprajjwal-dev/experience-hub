@@ -21,7 +21,7 @@ const {
   imageAlt,
   breadcrumbs = [],
 } = Astro.props;
-const usesImage = /^https?:\/\//.test(mediaClass);
+const usesImage = !mediaClass.startsWith('media-');
 ---
 
 <section class="border-b border-line bg-surface">
@@ -66,8 +66,8 @@ const usesImage = /^https?:\/\//.test(mediaClass);
         'media-frame aspect-[4/3] rounded-[1.5rem] lg:aspect-[5/4]',
         !usesImage && mediaClass,
       ]}
-      role="img"
-      aria-label={imageAlt}
+      role={!usesImage ? 'img' : undefined}
+      aria-label={!usesImage ? imageAlt : undefined}
     >
       {
         usesImage && (
@@ -75,8 +75,8 @@ const usesImage = /^https?:\/\//.test(mediaClass);
             class="absolute inset-0 h-full w-full object-cover"
             src={mediaClass}
             alt={imageAlt}
-            width="1200"
-            height="960"
+            width="1600"
+            height="1200"
             decoding="async"
           />
         )

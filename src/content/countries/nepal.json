@@ -3,7 +3,10 @@
   "slug": "nepal",
   "countryCode": "NP",
   "shortDescription": "Warm hospitality, spirited tables, and generous dining experiences shaped by the pleasure of gathering.",
-  "heroImage": "media-nepal",
+  "heroImage": "/images/kathmandu-dining.jpg",
+  "imageAlt": "A table of momo and accompanying Nepalese dishes in Kathmandu",
+  "imageWidth": 1600,
+  "imageHeight": 1200,
   "currencyCode": "NPR",
   "active": true
 }

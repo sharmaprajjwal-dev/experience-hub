@@ -7,6 +7,9 @@ interface Props {
   packageName: string;
   mediaClass: string;
   href: string;
+  imageAlt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
 }
 
 const {
@@ -17,24 +20,27 @@ const {
   packageName,
   mediaClass,
   href,
+  imageAlt,
+  imageWidth = 1600,
+  imageHeight = 1200,
 } = Astro.props;
-const usesImage = /^https?:\/\//.test(mediaClass);
+const usesImage = !mediaClass.startsWith('media-');
 ---
 
 <article class="card group">
   <div
     class:list={['media-frame aspect-[16/11]', !usesImage && mediaClass]}
-    role="img"
-    aria-label={`Placeholder artwork for ${title} at ${restaurant}`}
+    role={!usesImage ? 'img' : undefined}
+    aria-label={!usesImage ? imageAlt ?? `Dining atmosphere for ${title}` : undefined}
   >
     {
       usesImage && (
         <img
           class="absolute inset-0 h-full w-full object-cover"
           src={mediaClass}
-          alt={`${title} at ${restaurant}`}
-          width="1120"
-          height="770"
+          alt={imageAlt ?? `Dining atmosphere for ${title}`}
+          width={imageWidth}
+          height={imageHeight}
           loading="lazy"
           decoding="async"
         />

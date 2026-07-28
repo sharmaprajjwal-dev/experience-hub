@@ -35,7 +35,9 @@ const leadRestaurants = leadCountry
 const leadExperiences = getExperiencesForRestaurants(graph, leadRestaurants);
 const heroExperience =
   leadExperiences.find(({ data }) => data.featured) ?? featuredExperiences[0];
-const heroUsesImage = heroExperience?.data.heroImage.startsWith('http') ?? false;
+const heroUsesImage = heroExperience
+  ? !heroExperience.data.heroImage.startsWith('media-')
+  : false;
 const heroRestaurant = heroExperience
   ? getRestaurantForExperience(graph, heroExperience)
   : undefined;
@@ -78,8 +80,12 @@ const heroCountry = heroRestaurant
               ? false
               : heroExperience?.data.heroImage ?? 'media-journal',
           ]}
-          role="img"
-          aria-label={`Atmospheric placeholder artwork for ${heroExperience?.data.name ?? 'a featured dining experience'}`}
+          role={!heroUsesImage ? 'img' : undefined}
+          aria-label={
+            !heroUsesImage
+              ? `Atmospheric placeholder artwork for ${heroExperience?.data.name ?? 'a featured dining experience'}`
+              : undefined
+          }
         >
           {
             heroUsesImage && heroExperience && (
@@ -133,6 +139,9 @@ const heroCountry = heroRestaurant
                   location={location}
                   description={data.shortDescription}
                   mediaClass={data.heroImage}
+                  imageAlt={data.imageAlt}
+                  imageWidth={data.imageWidth}
+                  imageHeight={data.imageHeight}
                   href={`/countries/${data.slug}`}
                 />
               );
@@ -168,6 +177,9 @@ const heroCountry = heroRestaurant
                   description={experience.data.shortDescription}
                   packageName={`${packages.length} ${packages.length === 1 ? 'package' : 'packages'} available`}
                   mediaClass={experience.data.heroImage}
+                  imageAlt={experience.data.imageAlt}
+                  imageWidth={experience.data.imageWidth}
+                  imageHeight={experience.data.imageHeight}
                   href={`/experiences/${experience.data.slug}`}
                 />
               );

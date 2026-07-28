@@ -4,7 +4,10 @@
   "countrySlug": "nepal",
   "city": "Kathmandu",
   "shortDescription": "A welcoming Kathmandu restaurant known for relaxed hospitality, shareable favourites, and tables made for gathering.",
-  "heroImage": "media-nepal",
+  "heroImage": "/images/kathmandu-dining.jpg",
+  "imageAlt": "Momo and accompanying Nepalese dishes at a table in Kathmandu; illustrative destination photography",
+  "imageWidth": 1600,
+  "imageHeight": 1200,
   "fictional": false,
   "active": true
 }

@@ -5,8 +5,8 @@ publicationDate: 2026-07-16
 author: ExperienceHub Editorial
 category: Date Nights
 country: new-zealand
-featuredImage: media-journal-couple
-imageAlt: Abstract deep green and amber placeholder artwork evoking an intimate evening table
+featuredImage: /images/auckland-harbour.jpg
+imageAlt: Auckland Harbour Bridge silhouetted against an orange sunset
 draft: false
 featured: false
 seoTitle: What Makes a Couple Dining Experience Special? | ExperienceHub

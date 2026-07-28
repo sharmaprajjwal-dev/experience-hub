@@ -6,8 +6,8 @@ updatedDate: 2026-07-24
 author: ExperienceHub Editorial
 category: Group Experiences
 country: nepal
-featuredImage: media-journal-brunch
-imageAlt: Abstract warm-toned placeholder artwork suggesting a shared brunch table
+featuredImage: /images/kathmandu-dining.jpg
+imageAlt: A shared table of momo and accompanying Nepalese dishes in Kathmandu
 draft: false
 featured: true
 seoTitle: How to Choose a Brunch Package for Your Group | ExperienceHub

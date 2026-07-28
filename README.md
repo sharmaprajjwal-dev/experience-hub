@@ -37,9 +37,24 @@ Country → Restaurant → Experience → Package relationship.
 Structured catalogue entries live in `src/content/` as JSON, while Journal
 articles use Markdown with fully validated frontmatter. Adding a destination or
 article primarily means adding a new collection entry; detail pages are
-generated from that data. The current image values point to local gradient
-placeholder styles and can be replaced with image assets later without changing
-the routes or data relationships.
+generated from that data. Catalogue entries can use local image assets,
+Supabase Storage URLs, or the existing gradient fallbacks without changing
+routes or data relationships.
+
+## Image assets and attribution
+
+The demonstration catalogue uses two optimized local photographs sourced from
+Wikimedia Commons. Their authors, source pages, licences, and web-delivery
+changes are recorded on the public `/image-credits` page:
+
+- **Momo (Kathmandu)** by Виктор Пинчук, licensed CC BY 4.0.
+- **Auckland Harbour Bridge Sunset** by Stephen Witherden, licensed CC BY 2.0.
+
+The images illustrate destination and atmosphere only. They do not depict or
+endorse The Pizza House, the fictional Harbour & Pine concept, or any package.
+New images should be stored locally or in the configured Supabase bucket,
+include useful alternative text and dimensions, and carry attribution whenever
+the source licence requires it. Do not hotlink third-party files.
 
 Draft Journal entries are excluded from generated article routes, the Journal
 index, the sitemap, and the RSS feed. Published entries can reference an

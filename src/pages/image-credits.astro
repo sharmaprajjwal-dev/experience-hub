@@ -1,0 +1,84 @@
+---
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Image credits | ExperienceHub';
+const description =
+  'Credits and Creative Commons licence details for photography used by ExperienceHub.';
+---
+
+<BaseLayout title={title} description={description} canonicalURL="/image-credits">
+  <SiteHeader />
+  <main class="section-shell">
+    <div class="site-container max-w-4xl">
+      <p class="eyebrow">Open-source media</p>
+      <h1 class="mt-5 font-display text-5xl tracking-[-0.04em] sm:text-6xl">
+        Image credits
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg leading-8 text-muted">
+        ExperienceHub stores optimized local copies of these openly licensed
+        photographs. They illustrate destination and atmosphere; they do not
+        depict or endorse the featured restaurants or packages.
+      </p>
+
+      <div class="mt-12 grid gap-8">
+        <article class="card overflow-hidden">
+          <img
+            class="aspect-[4/3] w-full object-cover"
+            src="/images/kathmandu-dining.jpg"
+            alt="A table of momo and accompanying Nepalese dishes in Kathmandu"
+            width="1600"
+            height="1200"
+            decoding="async"
+          />
+          <div class="p-6 sm:p-8">
+            <h2 class="font-display text-3xl">Momo (Kathmandu)</h2>
+            <p class="mt-3 leading-7 text-muted">
+              Photograph by Виктор Пинчук, used under
+              <a class="text-link" href="https://creativecommons.org/licenses/by/4.0/">
+                CC BY 4.0
+              </a>.
+              Cropped responsively and resized for web delivery.
+            </p>
+            <a
+              class="text-link mt-5"
+              href="https://commons.wikimedia.org/wiki/File:Momo_(Kathmandu).jpg"
+            >
+              View the original on Wikimedia Commons
+            </a>
+          </div>
+        </article>
+
+        <article class="card overflow-hidden">
+          <img
+            class="aspect-[16/10] w-full object-cover"
+            src="/images/auckland-harbour.jpg"
+            alt="Auckland Harbour Bridge silhouetted against an orange sunset"
+            width="1600"
+            height="1007"
+            loading="lazy"
+            decoding="async"
+          />
+          <div class="p-6 sm:p-8">
+            <h2 class="font-display text-3xl">Auckland Harbour Bridge Sunset</h2>
+            <p class="mt-3 leading-7 text-muted">
+              Photograph by Stephen Witherden, used under
+              <a class="text-link" href="https://creativecommons.org/licenses/by/2.0/">
+                CC BY 2.0
+              </a>.
+              Resized for web delivery.
+            </p>
+            <a
+              class="text-link mt-5"
+              href="https://commons.wikimedia.org/wiki/File:Auckland_Harbour_Bridge_Sunset.jpg"
+            >
+              View the original on Wikimedia Commons
+            </a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </main>
+  <SiteFooter />
+</BaseLayout>
