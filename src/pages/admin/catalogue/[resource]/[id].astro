@@ -1,0 +1,777 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import {
+  deleteAdminRecord,
+  getAdminRecord,
+  getChildCount,
+  getParentOptions,
+  isCatalogueResource,
+  resourceLabels,
+  saveAdminRecord,
+  type CatalogueRecord,
+} from '../../../../lib/admin-catalogue';
+import {
+  CATALOGUE_IMAGE_ACCEPT,
+  CATALOGUE_IMAGE_BUCKET,
+  MAX_CATALOGUE_IMAGE_BYTES,
+} from '../../../../lib/storage';
+
+export const prerender = false;
+
+const resourceParam = Astro.params.resource;
+const idParam = Astro.params.id;
+if (!isCatalogueResource(resourceParam) || !idParam) {
+  return Astro.redirect('/admin', 302);
+}
+
+const resource = resourceParam;
+const isNew = idParam === 'new';
+const supabase = Astro.locals.supabase!;
+const labels = resourceLabels[resource];
+let record: CatalogueRecord | null = isNew
+  ? null
+  : await getAdminRecord(supabase, resource, idParam);
+if (!isNew && !record) {
+  return Astro.redirect(`/admin/catalogue/${resource}`, 302);
+}
+
+let submitted: FormData | null = null;
+let formError: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  try {
+    submitted = await Astro.request.formData();
+    const intent = submitted.get('_intent');
+
+    if (intent === 'delete') {
+      if (!record) {
+        formError = 'This record no longer exists.';
+      } else if (submitted.get('confirm_name') !== record.name) {
+        formError = `Type “${record.name}” exactly to confirm deletion.`;
+      } else {
+        const result = await deleteAdminRecord({
+          supabase,
+          resource,
+          record,
+        });
+        if (result.ok) {
+          return Astro.redirect(
+            `/admin/catalogue/${resource}?success=deleted`,
+            303,
+          );
+        }
+        formError = result.error;
+      }
+    } else {
+      const result = await saveAdminRecord({
+        supabase,
+        resource,
+        id: isNew ? undefined : idParam,
+        formData: submitted,
+        existing: record,
+      });
+      if (result.ok) {
+        return Astro.redirect(
+          `/admin/catalogue/${resource}?success=${isNew ? 'created' : 'updated'}`,
+          303,
+        );
+      }
+      formError = result.error;
+    }
+  } catch {
+    formError =
+      'The request could not be processed. Check the form and try again.';
+  }
+}
+
+const parentOptions = await getParentOptions(supabase, resource);
+const related = record
+  ? await getChildCount(supabase, resource, record.id)
+  : { child: null, count: 0 };
+const currentImagePath =
+  typeof record?.image_path === 'string' ? record.image_path : null;
+const currentImageUrl = currentImagePath
+  ? supabase.storage
+      .from(CATALOGUE_IMAGE_BUCKET)
+      .getPublicUrl(currentImagePath).data.publicUrl
+  : typeof record?.hero_image === 'string' &&
+      record.hero_image.startsWith('http')
+    ? record.hero_image
+    : null;
+
+const field = (name: string, fallback = '') => {
+  const submittedValue = submitted?.get(name);
+  if (typeof submittedValue === 'string') return submittedValue;
+  const recordValue = record?.[name];
+  if (Array.isArray(recordValue)) return recordValue.join('\n');
+  return recordValue === null || recordValue === undefined
+    ? fallback
+    : String(recordValue);
+};
+const isChecked = (name: string, fallback = false) =>
+  submitted ? submitted.has(name) : Boolean(record?.[name] ?? fallback);
+const maxSizeMb = MAX_CATALOGUE_IMAGE_BYTES / 1024 / 1024;
+---
+
+<AdminLayout
+  title={`${isNew ? 'Add' : 'Edit'} ${labels.singular.toLowerCase()}`}
+  description={`${isNew ? 'Create' : 'Update'} an ExperienceHub ${labels.singular.toLowerCase()}.`}
+  current={resource}
+>
+  <div class="max-w-5xl">
+    <a class="text-link" href={`/admin/catalogue/${resource}`}>
+      ← Back to {labels.plural.toLowerCase()}
+    </a>
+    <div class="mt-7 flex flex-wrap items-end justify-between gap-5">
+      <div>
+        <p class="eyebrow">{isNew ? 'New record' : 'Edit record'}</p>
+        <h1 class="mt-4 font-display text-5xl tracking-[-0.04em]">
+          {isNew ? `Add ${labels.singular.toLowerCase()}` : record?.name}
+        </h1>
+      </div>
+      {
+        !isNew && (
+          <span
+            class:list={[
+              'rounded-full px-3 py-1.5 text-xs font-bold uppercase',
+              record?.active
+                ? 'bg-success/10 text-success'
+                : 'bg-surface text-muted',
+            ]}
+          >
+            {record?.active ? 'Active' : 'Inactive'}
+          </span>
+        )
+      }
+    </div>
+
+    {
+      formError && (
+        <div class="mt-8 rounded-xl border border-error/30 bg-error/5 p-4 text-sm leading-6 text-error" role="alert">
+          {formError}
+        </div>
+      )
+    }
+
+    <form
+      id="catalogue-form"
+      class="mt-9 grid gap-8"
+      method="post"
+      enctype="multipart/form-data"
+    >
+      <input type="hidden" name="_intent" value="save" />
+      <input
+        id="image-width"
+        type="hidden"
+        name="image_width"
+        value={field('image_width')}
+      />
+      <input
+        id="image-height"
+        type="hidden"
+        name="image_height"
+        value={field('image_height')}
+      />
+
+      <section class="rounded-[1.5rem] border border-line bg-surface p-6 sm:p-8">
+        <p class="eyebrow">Core details</p>
+        <div class="mt-6 grid gap-6 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-semibold" for="name">
+              Name <span class="text-error" aria-hidden="true">*</span>
+            </label>
+            <input
+              class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+              id="name"
+              name="name"
+              type="text"
+              maxlength="120"
+              required
+              value={field('name')}
+            />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-semibold" for="slug">
+              Slug <span class="text-error" aria-hidden="true">*</span>
+            </label>
+            <input
+              class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4 font-mono text-sm"
+              id="slug"
+              name="slug"
+              type="text"
+              maxlength="80"
+              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+              required
+              value={field('slug')}
+              aria-describedby="slug-help"
+            />
+            <p id="slug-help" class="mt-2 text-xs leading-5 text-muted">
+              Suggested from the name. You can edit it; saving never overwrites
+              an existing slug.
+            </p>
+          </div>
+
+          {
+            resource !== 'countries' && (
+              <div class="sm:col-span-2">
+                <label
+                  class="block text-sm font-semibold"
+                  for={
+                    resource === 'restaurants'
+                      ? 'country_id'
+                      : resource === 'experiences'
+                        ? 'restaurant_id'
+                        : 'experience_id'
+                  }
+                >
+                  {resourceLabels[labels.parent!].singular}{' '}
+                  <span class="text-error" aria-hidden="true">*</span>
+                </label>
+                <select
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id={
+                    resource === 'restaurants'
+                      ? 'country_id'
+                      : resource === 'experiences'
+                        ? 'restaurant_id'
+                        : 'experience_id'
+                  }
+                  name={
+                    resource === 'restaurants'
+                      ? 'country_id'
+                      : resource === 'experiences'
+                        ? 'restaurant_id'
+                        : 'experience_id'
+                  }
+                  required
+                >
+                  <option value="">Choose {resourceLabels[labels.parent!].singular.toLowerCase()}</option>
+                  {parentOptions.map((option) => (
+                    <option
+                      value={option.id}
+                      selected={
+                        field(
+                          resource === 'restaurants'
+                            ? 'country_id'
+                            : resource === 'experiences'
+                              ? 'restaurant_id'
+                              : 'experience_id',
+                        ) === option.id
+                      }
+                    >
+                      {option.name}{option.active ? '' : ' — inactive'}
+                    </option>
+                  ))}
+                </select>
+                {parentOptions.length === 0 && (
+                  <p class="mt-2 text-xs text-error">
+                    Create a {resourceLabels[labels.parent!].singular.toLowerCase()} first.
+                  </p>
+                )}
+              </div>
+            )
+          }
+
+          {
+            resource === 'countries' && (
+              <>
+                <div>
+                  <label class="block text-sm font-semibold" for="country_code">
+                    Country code <span class="text-error">*</span>
+                  </label>
+                  <input
+                    class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4 uppercase"
+                    id="country_code"
+                    name="country_code"
+                    maxlength="2"
+                    pattern="[A-Za-z]{2}"
+                    required
+                    value={field('country_code')}
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold" for="currency_code">
+                    Currency code <span class="text-error">*</span>
+                  </label>
+                  <input
+                    class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4 uppercase"
+                    id="currency_code"
+                    name="currency_code"
+                    maxlength="3"
+                    pattern="[A-Za-z]{3}"
+                    required
+                    value={field('currency_code')}
+                  />
+                </div>
+              </>
+            )
+          }
+
+          {
+            resource === 'restaurants' && (
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-semibold" for="city">
+                  City <span class="text-error">*</span>
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="city"
+                  name="city"
+                  required
+                  value={field('city')}
+                />
+              </div>
+            )
+          }
+
+          {
+            resource === 'experiences' && (
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-semibold" for="type">
+                  Experience type <span class="text-error">*</span>
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="type"
+                  name="type"
+                  placeholder="Brunch"
+                  required
+                  value={field('type')}
+                />
+              </div>
+            )
+          }
+
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-semibold" for="short_description">
+              Short description <span class="text-error">*</span>
+            </label>
+            <textarea
+              class="mt-2 min-h-28 w-full rounded-xl border border-line bg-background p-4"
+              id="short_description"
+              name="short_description"
+              maxlength="320"
+              required
+            >{field('short_description')}</textarea>
+          </div>
+        </div>
+      </section>
+
+      {
+        resource === 'experiences' && (
+          <section class="rounded-[1.5rem] border border-line bg-surface p-6 sm:p-8">
+            <p class="eyebrow">Experience story</p>
+            <label class="mt-6 block text-sm font-semibold" for="long_description">
+              Full description <span class="text-error">*</span>
+            </label>
+            <textarea
+              class="mt-2 min-h-48 w-full rounded-xl border border-line bg-background p-4"
+              id="long_description"
+              name="long_description"
+              required
+            >{field('long_description')}</textarea>
+          </section>
+        )
+      }
+
+      {
+        resource === 'packages' && (
+          <section class="rounded-[1.5rem] border border-line bg-surface p-6 sm:p-8">
+            <p class="eyebrow">Package details</p>
+            <div class="mt-6 grid gap-6 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-semibold" for="full_description">
+                  Full description <span class="text-error">*</span>
+                </label>
+                <textarea
+                  class="mt-2 min-h-40 w-full rounded-xl border border-line bg-background p-4"
+                  id="full_description"
+                  name="full_description"
+                  required
+                >{field('full_description')}</textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="price">
+                  Price <span class="text-error">*</span>
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="price"
+                  name="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                  value={field('price')}
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="currency">
+                  Currency <span class="text-error">*</span>
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4 uppercase"
+                  id="currency"
+                  name="currency"
+                  maxlength="3"
+                  pattern="[A-Za-z]{3}"
+                  required
+                  value={field('currency')}
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="price_status">
+                  Price status <span class="text-error">*</span>
+                </label>
+                <select
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="price_status"
+                  name="price_status"
+                  required
+                >
+                  <option value="placeholder" selected={field('price_status', 'placeholder') === 'placeholder'}>Placeholder</option>
+                  <option value="confirmed" selected={field('price_status') === 'confirmed'}>Confirmed</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="number_of_guests">
+                  Guest count <span class="text-error">*</span>
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="number_of_guests"
+                  name="number_of_guests"
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  value={field('number_of_guests')}
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="suggested_guest_range">
+                  Suggested guest range <span class="text-error">*</span>
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="suggested_guest_range"
+                  name="suggested_guest_range"
+                  placeholder="2–4 guests"
+                  required
+                  value={field('suggested_guest_range')}
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="duration">
+                  Duration <span class="text-error">*</span>
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="duration"
+                  name="duration"
+                  placeholder="2 hours"
+                  required
+                  value={field('duration')}
+                />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-semibold" for="who_it_suits">
+                  Who it suits <span class="text-error">*</span>
+                </label>
+                <textarea
+                  class="mt-2 min-h-28 w-full rounded-xl border border-line bg-background p-4"
+                  id="who_it_suits"
+                  name="who_it_suits"
+                  required
+                >{field('who_it_suits')}</textarea>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-semibold" for="included_items">
+                  Included items <span class="text-error">*</span>
+                </label>
+                <textarea
+                  class="mt-2 min-h-40 w-full rounded-xl border border-line bg-background p-4"
+                  id="included_items"
+                  name="included_items"
+                  required
+                  aria-describedby="included-help"
+                >{field('included_items')}</textarea>
+                <p id="included-help" class="mt-2 text-xs text-muted">
+                  Enter one included item per line.
+                </p>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-semibold" for="optional_notes">
+                  Important notes
+                </label>
+                <textarea
+                  class="mt-2 min-h-28 w-full rounded-xl border border-line bg-background p-4"
+                  id="optional_notes"
+                  name="optional_notes"
+                >{field('optional_notes')}</textarea>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-semibold" for="booking_status">
+                  Booking status <span class="text-error">*</span>
+                </label>
+                <select
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="booking_status"
+                  name="booking_status"
+                  required
+                >
+                  <option value="coming-soon" selected={field('booking_status', 'coming-soon') === 'coming-soon'}>Coming soon</option>
+                  <option value="available" selected={field('booking_status') === 'available'}>Available</option>
+                  <option value="unavailable" selected={field('booking_status') === 'unavailable'}>Unavailable</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      <section class="rounded-[1.5rem] border border-line bg-surface p-6 sm:p-8">
+        <p class="eyebrow">Image</p>
+        <div class="mt-6 grid gap-7 md:grid-cols-[minmax(0,1fr)_minmax(15rem,0.7fr)]">
+          <div>
+            <label class="block text-sm font-semibold" for="image">
+              {currentImageUrl ? 'Replace image' : 'Upload image'}
+            </label>
+            <input
+              class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-3 py-2 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
+              id="image"
+              name="image"
+              type="file"
+              accept={CATALOGUE_IMAGE_ACCEPT}
+              aria-describedby="image-help"
+            />
+            <p id="image-help" class="mt-2 text-xs leading-5 text-muted">
+              JPEG, PNG, or WebP; maximum {maxSizeMb} MB. Replacing an image
+              removes the old object after the record saves.
+            </p>
+            <label class="mt-5 block text-sm font-semibold" for="image_alt">
+              Image alt text {currentImagePath && <span class="text-error">*</span>}
+            </label>
+            <input
+              class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+              id="image_alt"
+              name="image_alt"
+              type="text"
+              maxlength="180"
+              required={Boolean(currentImagePath)}
+              value={field('image_alt')}
+            />
+          </div>
+          <figure
+            id="image-preview"
+            class:list={[
+              'overflow-hidden rounded-xl border border-line bg-background',
+              !currentImageUrl && 'hidden',
+            ]}
+          >
+            <img
+              id="image-preview-element"
+              class="aspect-[4/3] h-full w-full object-cover"
+              src={currentImageUrl ?? undefined}
+              alt={field('image_alt', 'Catalogue image preview')}
+              width={field('image_width', '1200')}
+              height={field('image_height', '900')}
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section class="rounded-[1.5rem] border border-line bg-surface p-6 sm:p-8">
+        <p class="eyebrow">Visibility</p>
+        <div class="mt-6 flex flex-wrap gap-6">
+          <label class="flex items-center gap-3 text-sm font-semibold">
+            <input
+              class="size-5 accent-accent"
+              type="checkbox"
+              name="active"
+              checked={isChecked('active')}
+            />
+            Active on the public catalogue
+          </label>
+          {
+            (resource === 'experiences' || resource === 'packages') && (
+              <label class="flex items-center gap-3 text-sm font-semibold">
+                <input
+                  class="size-5 accent-accent"
+                  type="checkbox"
+                  name="featured"
+                  checked={isChecked('featured')}
+                />
+                Featured
+              </label>
+            )
+          }
+          {
+            resource === 'restaurants' && (
+              <label class="flex items-center gap-3 text-sm font-semibold">
+                <input
+                  class="size-5 accent-accent"
+                  type="checkbox"
+                  name="fictional"
+                  checked={isChecked('fictional')}
+                />
+                Fictional demo concept
+              </label>
+            )
+          }
+        </div>
+        <p class="mt-4 text-xs leading-5 text-muted">
+          Deactivation is preferred when a record has relationships or should
+          remain available for later editing.
+        </p>
+      </section>
+
+      <div class="flex flex-wrap gap-3">
+        <button
+          id="save-button"
+          class="button button--primary disabled:cursor-not-allowed disabled:opacity-50"
+          type="submit"
+        >
+          {isNew ? `Create ${labels.singular.toLowerCase()}` : 'Save changes'}
+        </button>
+        <a
+          class="button button--secondary"
+          href={`/admin/catalogue/${resource}`}
+        >
+          Cancel
+        </a>
+      </div>
+    </form>
+
+    {
+      !isNew && (
+        <section class="mt-12 rounded-[1.5rem] border border-error/30 bg-surface p-6 sm:p-8">
+          <p class="eyebrow text-error">Delete record</p>
+          <h2 class="mt-4 font-display text-3xl">
+            Permanently delete {record?.name}
+          </h2>
+          {related.count > 0 && related.child ? (
+            <p class="mt-4 leading-7 text-error">
+              Deletion is blocked because this record has {related.count}{' '}
+              related {resourceLabels[related.child].plural.toLowerCase()}.
+              Deactivate it or resolve those records first.
+            </p>
+          ) : (
+            <p class="mt-4 leading-7 text-muted">
+              This removes the database record and its attached storage image.
+              This action cannot be undone. Type the record name to confirm.
+            </p>
+          )}
+          <form class="mt-6 grid max-w-xl gap-4" method="post">
+            <input type="hidden" name="_intent" value="delete" />
+            <label class="text-sm font-semibold" for="confirm-name">
+              Type “{record?.name}”
+            </label>
+            <input
+              class="min-h-12 rounded-xl border border-line bg-background px-4"
+              id="confirm-name"
+              name="confirm_name"
+              autocomplete="off"
+              disabled={related.count > 0}
+              required
+            />
+            <button
+              class="button w-fit border-error bg-error text-white disabled:cursor-not-allowed disabled:opacity-50"
+              type="submit"
+              disabled={related.count > 0}
+            >
+              Delete permanently
+            </button>
+          </form>
+        </section>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<script>
+  const nameInput = document.querySelector<HTMLInputElement>('#name');
+  const slugInput = document.querySelector<HTMLInputElement>('#slug');
+  const form = document.querySelector<HTMLFormElement>('#catalogue-form');
+  const saveButton = document.querySelector<HTMLButtonElement>('#save-button');
+  const fileInput = document.querySelector<HTMLInputElement>('#image');
+  const altInput = document.querySelector<HTMLInputElement>('#image_alt');
+  const preview = document.querySelector<HTMLElement>('#image-preview');
+  const previewImage =
+    document.querySelector<HTMLImageElement>('#image-preview-element');
+  const widthInput =
+    document.querySelector<HTMLInputElement>('#image-width');
+  const heightInput =
+    document.querySelector<HTMLInputElement>('#image-height');
+  let slugWasEdited = Boolean(slugInput?.value);
+  let previewUrl: string | null = null;
+
+  function slugify(value: string) {
+    return value
+      .normalize('NFKD')
+      .toLowerCase()
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80);
+  }
+
+  slugInput?.addEventListener('input', () => {
+    slugWasEdited = true;
+  });
+  nameInput?.addEventListener('input', () => {
+    if (slugInput && !slugWasEdited) slugInput.value = slugify(nameInput.value);
+  });
+
+  fileInput?.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (!file || !previewImage) return;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(file);
+    const probe = new Image();
+    probe.onload = () => {
+      if (
+        probe.naturalWidth < 640 ||
+        probe.naturalHeight < 360 ||
+        probe.naturalWidth > 8000 ||
+        probe.naturalHeight > 8000
+      ) {
+        fileInput.setCustomValidity(
+          'Use an image at least 640 × 360 pixels with no side above 8,000 pixels.',
+        );
+        fileInput.reportValidity();
+        return;
+      }
+      fileInput.setCustomValidity('');
+      previewImage.src = previewUrl!;
+      previewImage.alt = altInput?.value.trim() || 'Selected image preview';
+      previewImage.width = probe.naturalWidth;
+      previewImage.height = probe.naturalHeight;
+      if (widthInput) widthInput.value = String(probe.naturalWidth);
+      if (heightInput) heightInput.value = String(probe.naturalHeight);
+      if (altInput) altInput.required = true;
+      preview?.classList.remove('hidden');
+    };
+    probe.onerror = () => {
+      fileInput.setCustomValidity('This file could not be read as an image.');
+      fileInput.reportValidity();
+    };
+    probe.src = previewUrl;
+  });
+
+  altInput?.addEventListener('input', () => {
+    if (previewImage) {
+      previewImage.alt = altInput.value.trim() || 'Catalogue image preview';
+    }
+  });
+
+  form?.addEventListener('submit', () => {
+    if (!form.checkValidity() || !saveButton) return;
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving…';
+  });
+
+  window.addEventListener('pagehide', () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  });
+</script>

@@ -14,13 +14,7 @@ import {
   getRestaurantForExperience,
 } from '../../lib/content';
 
-export async function getStaticPaths() {
-  const { packages } = await getContentGraph();
-
-  return packages.map(({ data }) => ({
-    params: { slug: data.slug },
-  }));
-}
+export const prerender = false;
 
 const graph = await getContentGraph();
 const packageEntry = graph.packages.find(
@@ -28,7 +22,7 @@ const packageEntry = graph.packages.find(
 );
 
 if (!packageEntry) {
-  throw new Error(`Package not found: ${Astro.params.slug}`);
+  return Astro.redirect('/experiences', 302);
 }
 
 const experience = getExperienceForPackage(graph, packageEntry);

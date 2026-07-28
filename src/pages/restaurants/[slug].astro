@@ -13,13 +13,7 @@ import {
   getPackagesForExperiences,
 } from '../../lib/content';
 
-export async function getStaticPaths() {
-  const { restaurants } = await getContentGraph();
-
-  return restaurants.map(({ data }) => ({
-    params: { slug: data.slug },
-  }));
-}
+export const prerender = false;
 
 const graph = await getContentGraph();
 const restaurant = graph.restaurants.find(
@@ -27,7 +21,7 @@ const restaurant = graph.restaurants.find(
 );
 
 if (!restaurant) {
-  throw new Error(`Restaurant not found: ${Astro.params.slug}`);
+  return Astro.redirect('/countries', 302);
 }
 
 const country = getCountryForRestaurant(graph, restaurant);
@@ -93,7 +87,7 @@ const structuredData = [
       title={restaurant.data.name}
       description={restaurant.data.shortDescription}
       mediaClass={restaurant.data.heroImage}
-      imageAlt={`Placeholder artwork for ${restaurant.data.name} in ${restaurant.data.city}`}
+      imageAlt={restaurant.data.imageAlt ?? `${restaurant.data.name} in ${restaurant.data.city}`}
       breadcrumbs={[
         { label: 'Countries', href: '/countries' },
         {

@@ -10,6 +10,8 @@ import {
   getRestaurantsForCountry,
 } from '../../lib/content';
 
+export const prerender = false;
+
 const graph = await getContentGraph();
 const title = 'Countries | ExperienceHub';
 const description =

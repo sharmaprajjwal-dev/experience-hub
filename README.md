@@ -155,10 +155,10 @@ editable user metadata can be manipulated. The middleware therefore validates
 the user with Supabase before the protected page renders.
 
 Current limitations are intentional: there is no public signup, MFA interface,
-catalogue-management interface, or service-role client. Supabase rate limits and
-email delivery settings still need production review. Admin routes require a
-Node-compatible deployment because they are rendered on demand, and the
-placeholder canonical domain must be replaced before deployment.
+bulk catalogue workflow, or service-role client. Supabase rate limits and email
+delivery settings still need production review. Admin and catalogue routes
+require a Node-compatible deployment because they are rendered on demand, and
+the placeholder canonical domain must be replaced before deployment.
 
 ## Catalogue image storage
 
@@ -204,7 +204,7 @@ height values and use lazy loading for images below the fold.
 
 To test with a configured Supabase project and promoted administrator:
 
-1. Apply all three migrations in filename order.
+1. Apply all four migrations in filename order.
 2. Configure `.env` with the browser-safe project URL and anonymous/publishable
    key.
 3. Run `npm run dev`, sign in at `/admin/login`, and open
@@ -217,6 +217,43 @@ session and the public anonymous/publishable key. It needs no secret because
 Storage RLS makes the authorization decision in Supabase. The service-role key
 still bypasses RLS, is not used by this project, and must never be exposed in
 browser code or given a `PUBLIC_` prefix.
+
+## Catalogue administration
+
+Apply
+`supabase/migrations/20260728000003_add_catalogue_admin_policies.sql` after the
+storage migration. It grants catalogue mutation privileges only to the
+`authenticated` database role and adds Row Level Security policies that require
+the signed-in user's trusted `profiles.role` to be `admin`. Anonymous users
+retain active-record reads only. The migration also adds the package hero-image
+fallback field needed by the shared image workflow.
+
+After signing in, `/admin` shows overview counts, recently updated records, and
+a quick **Add package** action. The catalogue navigation supports countries,
+restaurants, experiences, and packages. Each editor validates required fields,
+suggests an editable slug, checks slug uniqueness before saving, handles the
+correct parent relationship, and supports active, featured, image, and alt-text
+state where applicable.
+
+Package inclusions use one plain-text line per item instead of a rich-text
+editor. Package currency is checked against the country reached through the
+selected experience and restaurant. Image replacements upload a new
+collision-resistant Storage object, update the database record, and then remove
+the previous object.
+
+Deletion requires typing the record name exactly. The dashboard checks for
+child records and blocks destructive deletion when a country still has
+restaurants, a restaurant has experiences, or an experience has packages.
+PostgreSQL foreign keys remain the final safeguard. Deactivation is the
+recommended choice when content may be restored or relationships remain.
+
+Public catalogue routes render on demand and fetch active Supabase records for
+each request, so saved changes do not require a site rebuild. Inactive records
+are excluded by both queries and RLS, and direct visits to inactive or missing
+detail slugs return to the relevant catalogue index. The validated local
+content remains a development fallback only when Supabase is missing or
+unavailable; a successfully connected but empty database displays normal empty
+states instead of substituting demo records.
 
 ## Local installation
 
@@ -254,12 +291,11 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 8 adds a reusable, administrator-only Supabase Storage upload and
-delete utility, a temporary protected storage test interface, a public
-`experience-images` bucket definition, restrictive Storage RLS policies, and
-normalized catalogue image metadata fields. Full catalogue editing, public
-signup, service-role access, checkout, Stripe, CMS, analytics, and runtime AI
-features remain out of scope.
+Milestone 9 adds a focused Supabase catalogue dashboard for viewing, creating,
+editing, activating, featuring, imaging, and safely deleting countries,
+restaurants, experiences, and packages. Public catalogue routes now read fresh
+active data at request time. Public signup, service-role access, checkout,
+Stripe, analytics, and runtime AI features remain out of scope.
 
 Canonical metadata currently uses the reserved placeholder host
 `https://experiencehub.example`. Replace the `site` value in
@@ -267,9 +303,9 @@ Canonical metadata currently uses the reserved placeholder host
 
 ## Validation
 
-Each milestone is validated with `npm run build`. Milestone 8 additionally
-checks on-demand protected storage routes, accepted formats and size limits,
-unique path generation, server-side signature checks, public-read/admin-write
-bucket policy separation, catalogue image metadata constraints, and the absence
-of embedded credentials. Live upload and delete are tested only when real
-Supabase credentials and an administrator account are available.
+Each milestone is validated with `npm run build`. Milestone 9 additionally
+checks protected dashboard routes, server-side admin mutations, slug and field
+validation, relationship-aware deletion, image replacement, request-time public
+catalogue reads, inactive-record filtering, RLS policy separation, and the
+absence of embedded credentials. Live add, edit, deactivate, upload, and delete
+tests require real Supabase credentials and a promoted administrator.

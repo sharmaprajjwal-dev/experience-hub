@@ -1,0 +1,126 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import {
+  catalogueResources,
+  resourceLabels,
+  type CatalogueResource,
+} from '../lib/admin-catalogue';
+
+interface Props {
+  title: string;
+  description: string;
+  current?: CatalogueResource | 'overview' | 'storage';
+}
+
+const { title, description, current = 'overview' } = Astro.props;
+const adminUser = Astro.locals.adminUser;
+---
+
+<BaseLayout
+  title={`${title} | ExperienceHub admin`}
+  description={description}
+  canonicalURL={Astro.url.pathname}
+  robots="noindex, nofollow"
+>
+  <div class="min-h-screen bg-background lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+    <aside class="border-b border-line bg-surface lg:min-h-screen lg:border-r lg:border-b-0">
+      <div class="p-5 lg:sticky lg:top-0 lg:p-7">
+        <div class="flex flex-wrap items-center justify-between gap-4 lg:block">
+          <a class="font-display text-xl tracking-[-0.03em]" href="/admin">
+            ExperienceHub
+          </a>
+          <p class="mt-1 hidden text-xs text-muted lg:block">
+            Catalogue administration
+          </p>
+          <a
+            class="text-link lg:mt-7"
+            href="/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            View website
+          </a>
+        </div>
+
+        <nav class="mt-5 overflow-x-auto lg:mt-9" aria-label="Administration">
+          <ul class="flex min-w-max gap-2 lg:min-w-0 lg:flex-col">
+            <li>
+              <a
+                class:list={[
+                  'block rounded-xl px-4 py-3 text-sm font-semibold',
+                  current === 'overview'
+                    ? 'bg-ink text-white'
+                    : 'text-muted hover:bg-background hover:text-ink',
+                ]}
+                href="/admin"
+                aria-current={current === 'overview' ? 'page' : undefined}
+              >
+                Overview
+              </a>
+            </li>
+            {
+              catalogueResources.map((resource) => (
+                <li>
+                  <a
+                    class:list={[
+                      'block rounded-xl px-4 py-3 text-sm font-semibold',
+                      current === resource
+                        ? 'bg-ink text-white'
+                        : 'text-muted hover:bg-background hover:text-ink',
+                    ]}
+                    href={`/admin/catalogue/${resource}`}
+                    aria-current={current === resource ? 'page' : undefined}
+                  >
+                    {resourceLabels[resource].plural}
+                  </a>
+                </li>
+              ))
+            }
+            <li>
+              <a
+                class:list={[
+                  'block rounded-xl px-4 py-3 text-sm font-semibold',
+                  current === 'storage'
+                    ? 'bg-ink text-white'
+                    : 'text-muted hover:bg-background hover:text-ink',
+                ]}
+                href="/admin/storage"
+                aria-current={current === 'storage' ? 'page' : undefined}
+              >
+                Storage test
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="mt-7 hidden border-t border-line pt-6 lg:block">
+          <p class="truncate text-xs text-muted">
+            {adminUser?.email ?? 'Administrator'}
+          </p>
+          <form class="mt-3" action="/admin/logout" method="post">
+            <button class="text-link" type="submit">Sign out</button>
+          </form>
+        </div>
+      </div>
+    </aside>
+
+    <div class="min-w-0">
+      <header class="border-b border-line bg-surface">
+        <div class="flex min-h-20 flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8 lg:px-10">
+          <div>
+            <p class="eyebrow">Private administration</p>
+            <p class="mt-1 text-sm text-muted">{adminUser?.email}</p>
+          </div>
+          <form class="lg:hidden" action="/admin/logout" method="post">
+            <button class="button button--secondary" type="submit">
+              Sign out
+            </button>
+          </form>
+        </div>
+      </header>
+      <main class="px-5 py-10 sm:px-8 lg:px-10 lg:py-12">
+        <slot />
+      </main>
+    </div>
+  </div>
+</BaseLayout>

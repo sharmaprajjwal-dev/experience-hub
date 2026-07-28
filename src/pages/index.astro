@@ -18,6 +18,8 @@ import {
 } from '../lib/content';
 import { getPublishedJournalEntries } from '../lib/journal';
 
+export const prerender = false;
+
 const title = 'ExperienceHub | Remarkable dining, rooted in place';
 const description =
   'Discover curated restaurant experiences and thoughtful dining packages in Nepal and New Zealand.';
@@ -33,6 +35,7 @@ const leadRestaurants = leadCountry
 const leadExperiences = getExperiencesForRestaurants(graph, leadRestaurants);
 const heroExperience =
   leadExperiences.find(({ data }) => data.featured) ?? featuredExperiences[0];
+const heroUsesImage = heroExperience?.data.heroImage.startsWith('http') ?? false;
 const heroRestaurant = heroExperience
   ? getRestaurantForExperience(graph, heroExperience)
   : undefined;
@@ -71,11 +74,25 @@ const heroCountry = heroRestaurant
         <div
           class:list={[
             'media-frame hero-enter hero-enter--delay aspect-[4/5] rounded-[1.5rem] sm:aspect-[5/4] lg:aspect-[4/5]',
-            heroExperience?.data.heroImage ?? 'media-journal',
+            heroUsesImage
+              ? false
+              : heroExperience?.data.heroImage ?? 'media-journal',
           ]}
           role="img"
           aria-label={`Atmospheric placeholder artwork for ${heroExperience?.data.name ?? 'a featured dining experience'}`}
         >
+          {
+            heroUsesImage && heroExperience && (
+              <img
+                class="absolute inset-0 h-full w-full object-cover"
+                src={heroExperience.data.heroImage}
+                alt={heroExperience.data.imageAlt ?? heroExperience.data.name}
+                width={heroExperience.data.imageWidth ?? 1200}
+                height={heroExperience.data.imageHeight ?? 1500}
+                decoding="async"
+              />
+            )
+          }
           <div
             class="absolute right-[12%] bottom-[11%] z-10 max-w-64 rounded-xl border border-white/30 bg-black/20 p-5 text-white backdrop-blur-md"
           >

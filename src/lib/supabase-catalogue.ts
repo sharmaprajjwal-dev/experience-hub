@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { CATALOGUE_IMAGE_BUCKET } from './storage';
 import type {
   ContentGraph,
   CountryEntry,
@@ -16,6 +17,10 @@ interface CountryRow {
   hero_image: string;
   currency_code: string;
   active: boolean;
+  image_path: string | null;
+  image_alt: string | null;
+  image_width: number | null;
+  image_height: number | null;
 }
 
 interface RestaurantRow {
@@ -28,6 +33,10 @@ interface RestaurantRow {
   hero_image: string;
   fictional: boolean;
   active: boolean;
+  image_path: string | null;
+  image_alt: string | null;
+  image_width: number | null;
+  image_height: number | null;
 }
 
 interface ExperienceRow {
@@ -41,6 +50,10 @@ interface ExperienceRow {
   hero_image: string;
   featured: boolean;
   active: boolean;
+  image_path: string | null;
+  image_alt: string | null;
+  image_width: number | null;
+  image_height: number | null;
 }
 
 interface PackageRow {
@@ -62,6 +75,11 @@ interface PackageRow {
   featured: boolean;
   active: boolean;
   booking_status: 'available' | 'coming-soon' | 'unavailable';
+  hero_image: string;
+  image_path: string | null;
+  image_alt: string | null;
+  image_width: number | null;
+  image_height: number | null;
 }
 
 function toEntry<T>(
@@ -127,6 +145,12 @@ export async function getSupabaseContentGraph(
   const experienceSlugById = new Map(
     experienceRows.map((row) => [row.id, row.slug]),
   );
+  const publicImage = (fallback: string, path: string | null) =>
+    path
+      ? supabase.storage
+          .from(CATALOGUE_IMAGE_BUCKET)
+          .getPublicUrl(path).data.publicUrl
+      : fallback;
 
   const countries = countryRows.map((row) =>
     toEntry<CountryEntry>('countries', row.slug, {
@@ -134,7 +158,10 @@ export async function getSupabaseContentGraph(
       slug: row.slug,
       countryCode: row.country_code,
       shortDescription: row.short_description,
-      heroImage: row.hero_image,
+      heroImage: publicImage(row.hero_image, row.image_path),
+      imageAlt: row.image_alt ?? undefined,
+      imageWidth: row.image_width ?? undefined,
+      imageHeight: row.image_height ?? undefined,
       currencyCode: row.currency_code,
       active: row.active,
     }),
@@ -150,7 +177,10 @@ export async function getSupabaseContentGraph(
       },
       city: row.city,
       shortDescription: row.short_description,
-      heroImage: row.hero_image,
+      heroImage: publicImage(row.hero_image, row.image_path),
+      imageAlt: row.image_alt ?? undefined,
+      imageWidth: row.image_width ?? undefined,
+      imageHeight: row.image_height ?? undefined,
       fictional: row.fictional,
       active: row.active,
     }),
@@ -167,7 +197,10 @@ export async function getSupabaseContentGraph(
       type: row.type,
       shortDescription: row.short_description,
       longDescription: row.long_description,
-      heroImage: row.hero_image,
+      heroImage: publicImage(row.hero_image, row.image_path),
+      imageAlt: row.image_alt ?? undefined,
+      imageWidth: row.image_width ?? undefined,
+      imageHeight: row.image_height ?? undefined,
       featured: row.featured,
       active: row.active,
     }),
@@ -192,6 +225,10 @@ export async function getSupabaseContentGraph(
       whoItSuits: row.who_it_suits,
       includedItems: row.included_items,
       optionalNotes: row.optional_notes ?? undefined,
+      heroImage: publicImage(row.hero_image, row.image_path),
+      imageAlt: row.image_alt ?? undefined,
+      imageWidth: row.image_width ?? undefined,
+      imageHeight: row.image_height ?? undefined,
       featured: row.featured,
       active: row.active,
       bookingStatus: row.booking_status,

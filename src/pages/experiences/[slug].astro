@@ -11,13 +11,7 @@ import {
   getRestaurantForExperience,
 } from '../../lib/content';
 
-export async function getStaticPaths() {
-  const { experiences } = await getContentGraph();
-
-  return experiences.map(({ data }) => ({
-    params: { slug: data.slug },
-  }));
-}
+export const prerender = false;
 
 const graph = await getContentGraph();
 const experience = graph.experiences.find(
@@ -25,7 +19,7 @@ const experience = graph.experiences.find(
 );
 
 if (!experience) {
-  throw new Error(`Experience not found: ${Astro.params.slug}`);
+  return Astro.redirect('/experiences', 302);
 }
 
 const restaurant = getRestaurantForExperience(graph, experience);
@@ -53,7 +47,7 @@ const description = experience.data.shortDescription;
       title={experience.data.name}
       description={experience.data.shortDescription}
       mediaClass={experience.data.heroImage}
-      imageAlt={`Placeholder artwork for ${experience.data.name} at ${restaurant.data.name}`}
+      imageAlt={experience.data.imageAlt ?? `${experience.data.name} at ${restaurant.data.name}`}
       breadcrumbs={[
         { label: 'Experiences', href: '/experiences' },
         { label: experience.data.name },

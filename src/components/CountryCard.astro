@@ -8,14 +8,28 @@ interface Props {
 }
 
 const { country, location, description, mediaClass, href } = Astro.props;
+const usesImage = /^https?:\/\//.test(mediaClass);
 ---
 
 <article class="card group">
   <div
-    class:list={['media-frame aspect-[4/3]', mediaClass]}
+    class:list={['media-frame aspect-[4/3]', !usesImage && mediaClass]}
     role="img"
     aria-label={`Atmospheric placeholder artwork inspired by ${country}`}
   >
+    {
+      usesImage && (
+        <img
+          class="absolute inset-0 h-full w-full object-cover"
+          src={mediaClass}
+          alt={`A dining scene in ${country}`}
+          width="960"
+          height="720"
+          loading="lazy"
+          decoding="async"
+        />
+      )
+    }
     <p
       class="absolute bottom-5 left-5 z-10 text-xs font-bold tracking-[0.18em] text-white uppercase"
     >

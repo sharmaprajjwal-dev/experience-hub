@@ -15,13 +15,7 @@ import {
   getRestaurantForExperience,
 } from '../../lib/content';
 
-export async function getStaticPaths() {
-  const { packages } = await getContentGraph();
-
-  return packages.map(({ data }) => ({
-    params: { slug: data.slug },
-  }));
-}
+export const prerender = false;
 
 const graph = await getContentGraph();
 const packageEntry = graph.packages.find(
@@ -29,7 +23,7 @@ const packageEntry = graph.packages.find(
 );
 
 if (!packageEntry) {
-  throw new Error(`Package not found: ${Astro.params.slug}`);
+  return Astro.redirect('/experiences', 302);
 }
 
 const experience = getExperienceForPackage(graph, packageEntry);
@@ -134,8 +128,8 @@ const structuredData = [
       eyebrow={`${formatBookingStatus(packageEntry.data.bookingStatus)} · ${country.data.name}`}
       title={packageEntry.data.name}
       description={packageEntry.data.shortDescription}
-      mediaClass={experience.data.heroImage}
-      imageAlt={`Placeholder artwork for ${packageEntry.data.name}`}
+      mediaClass={packageEntry.data.heroImage ?? experience.data.heroImage}
+      imageAlt={packageEntry.data.imageAlt ?? `Dining setting for ${packageEntry.data.name}`}
       breadcrumbs={[
         {
           label: country.data.name,

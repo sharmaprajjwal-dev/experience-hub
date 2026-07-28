@@ -18,14 +18,28 @@ const {
   mediaClass,
   href,
 } = Astro.props;
+const usesImage = /^https?:\/\//.test(mediaClass);
 ---
 
 <article class="card group">
   <div
-    class:list={['media-frame aspect-[16/11]', mediaClass]}
+    class:list={['media-frame aspect-[16/11]', !usesImage && mediaClass]}
     role="img"
     aria-label={`Placeholder artwork for ${title} at ${restaurant}`}
   >
+    {
+      usesImage && (
+        <img
+          class="absolute inset-0 h-full w-full object-cover"
+          src={mediaClass}
+          alt={`${title} at ${restaurant}`}
+          width="1120"
+          height="770"
+          loading="lazy"
+          decoding="async"
+        />
+      )
+    }
     <span
       class="absolute top-5 left-5 z-10 rounded-full border border-white/30 bg-black/15 px-3 py-1 text-[0.68rem] font-bold tracking-[0.16em] text-white uppercase backdrop-blur-sm"
     >

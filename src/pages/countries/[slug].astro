@@ -16,13 +16,7 @@ import {
   getRestaurantsForCountry,
 } from '../../lib/content';
 
-export async function getStaticPaths() {
-  const { countries } = await getContentGraph();
-
-  return countries.map(({ data }) => ({
-    params: { slug: data.slug },
-  }));
-}
+export const prerender = false;
 
 const graph = await getContentGraph();
 const country = graph.countries.find(
@@ -30,7 +24,7 @@ const country = graph.countries.find(
 );
 
 if (!country) {
-  throw new Error(`Country not found: ${Astro.params.slug}`);
+  return Astro.redirect('/countries', 302);
 }
 
 const restaurants = getRestaurantsForCountry(graph, country.data.slug);
@@ -48,7 +42,7 @@ const description = country.data.shortDescription;
       title={country.data.name}
       description={country.data.shortDescription}
       mediaClass={country.data.heroImage}
-      imageAlt={`Atmospheric placeholder artwork inspired by ${country.data.name}`}
+      imageAlt={country.data.imageAlt ?? `Dining atmosphere inspired by ${country.data.name}`}
       breadcrumbs={[
         { label: 'Countries', href: '/countries' },
         { label: country.data.name },
@@ -76,11 +70,25 @@ const description = country.data.shortDescription;
                   <div
                     class:list={[
                       'media-frame aspect-[16/9]',
-                      data.heroImage,
+                      !data.heroImage.startsWith('http') && data.heroImage,
                     ]}
                     role="img"
-                    aria-label={`Placeholder artwork for ${data.name} in ${data.city}`}
-                  />
+                    aria-label={data.imageAlt ?? `${data.name} in ${data.city}`}
+                  >
+                    {
+                      data.heroImage.startsWith('http') && (
+                        <img
+                          class="absolute inset-0 h-full w-full object-cover"
+                          src={data.heroImage}
+                          alt={data.imageAlt ?? `${data.name} in ${data.city}`}
+                          width={data.imageWidth ?? 1120}
+                          height={data.imageHeight ?? 630}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )
+                    }
+                  </div>
                   <div class="p-6 sm:p-8">
                     <p class="eyebrow">{data.city}</p>
                     <h3 class="mt-4 font-display text-3xl">{data.name}</h3>

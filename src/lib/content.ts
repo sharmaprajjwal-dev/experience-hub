@@ -43,11 +43,8 @@ async function getLocalContentGraph(): Promise<ContentGraph> {
   return graph;
 }
 
-let contentGraphPromise: Promise<ContentGraph> | undefined;
-
 export function getContentGraph(): Promise<ContentGraph> {
-  contentGraphPromise ??= loadContentGraph();
-  return contentGraphPromise;
+  return loadContentGraph();
 }
 
 async function loadContentGraph(): Promise<ContentGraph> {
@@ -73,15 +70,6 @@ async function loadContentGraph(): Promise<ContentGraph> {
 
   try {
     const graph = await getSupabaseContentGraph(supabase);
-
-    if (
-      graph.countries.length === 0 ||
-      graph.restaurants.length === 0 ||
-      graph.experiences.length === 0 ||
-      graph.packages.length === 0
-    ) {
-      throw new Error('The active Supabase catalogue is incomplete.');
-    }
 
     sortContentGraph(graph);
     validateContentGraph(graph);
