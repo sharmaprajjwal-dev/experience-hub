@@ -1,0 +1,71 @@
+---
+import type { JournalEntry } from '../lib/journal';
+import { formatJournalDate, getReadingTime } from '../lib/journal';
+
+interface Props {
+  entry: JournalEntry;
+  featured?: boolean;
+}
+
+const { entry, featured = false } = Astro.props;
+---
+
+<article
+  class:list={[
+    'card group relative',
+    { 'grid overflow-hidden lg:grid-cols-[1.05fr_0.95fr]': featured },
+  ]}
+>
+  <div
+    class:list={[
+      'media-frame',
+      entry.data.featuredImage,
+      featured ? 'min-h-72 lg:min-h-full' : 'aspect-[16/10]',
+    ]}
+    role="img"
+    aria-label={entry.data.imageAlt}
+  >
+    {
+      featured && (
+        <span class="absolute top-5 left-5 z-10 rounded-full bg-surface px-3 py-1 text-[0.68rem] font-bold tracking-[0.16em] text-ink uppercase">
+          Featured
+        </span>
+      )
+    }
+  </div>
+  <div class:list={['p-6 sm:p-8', { 'lg:p-12': featured }]}>
+    <div class="flex flex-wrap gap-2 text-[0.68rem] font-bold tracking-[0.13em] uppercase">
+      <span class="text-accent">{entry.data.category}</span>
+      <span class="text-muted" aria-hidden="true">·</span>
+      <span class="text-muted">
+        {
+          entry.data.country.id
+            .split('-')
+            .map((word) => word[0].toUpperCase() + word.slice(1))
+            .join(' ')
+        }
+      </span>
+    </div>
+    <h3
+      class:list={[
+        'mt-4 font-display leading-tight tracking-[-0.03em] text-balance',
+        featured ? 'text-4xl sm:text-5xl' : 'text-3xl',
+      ]}
+    >
+      <a
+        class="after:absolute after:inset-0"
+        href={`/journal/${entry.id}`}
+      >
+        {entry.data.title}
+      </a>
+    </h3>
+    <p class="mt-4 leading-7 text-muted">{entry.data.description}</p>
+    <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-5 text-xs text-muted">
+      <time datetime={entry.data.publicationDate.toISOString()}>
+        {formatJournalDate(entry.data.publicationDate)}
+      </time>
+      <span aria-hidden="true">·</span>
+      <span>{getReadingTime(entry.body ?? '')} min read</span>
+    </div>
+  </div>
+</article>

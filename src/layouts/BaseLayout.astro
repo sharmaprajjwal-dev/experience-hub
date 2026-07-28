@@ -6,6 +6,11 @@ interface Props {
   description?: string;
   canonicalURL?: URL | string;
   ogType?: 'website' | 'article';
+  publishedTime?: Date;
+  modifiedTime?: Date;
+  author?: string;
+  ogImage?: URL | string;
+  ogImageAlt?: string;
   structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
 
@@ -14,6 +19,11 @@ const {
   description = 'Discover thoughtfully curated dining experiences and packages in remarkable destinations.',
   canonicalURL,
   ogType = 'website',
+  publishedTime,
+  modifiedTime,
+  author,
+  ogImage = '/og.jpg',
+  ogImageAlt = 'ExperienceHub Journal — considered dining guides and curated experiences',
   structuredData,
 } = Astro.props;
 
@@ -22,6 +32,7 @@ const canonical = canonicalURL
   : Astro.site
     ? new URL(Astro.url.pathname, Astro.site).toString()
     : undefined;
+const socialImage = new URL(ogImage, Astro.site ?? Astro.url).toString();
 const jsonLd = structuredData ? JSON.stringify(structuredData) : undefined;
 ---
 
@@ -38,6 +49,41 @@ const jsonLd = structuredData ? JSON.stringify(structuredData) : undefined;
     <meta property="og:description" content={description} />
     <meta property="og:type" content={ogType} />
     {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:alt" content={ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="ExperienceHub Journal"
+      href="/journal/rss.xml"
+    />
+    {
+      ogType === 'article' && publishedTime && (
+        <meta
+          property="article:published_time"
+          content={publishedTime.toISOString()}
+        />
+      )
+    }
+    {
+      ogType === 'article' && modifiedTime && (
+        <meta
+          property="article:modified_time"
+          content={modifiedTime.toISOString()}
+        />
+      )
+    }
+    {
+      ogType === 'article' && author && (
+        <meta property="article:author" content={author} />
+      )
+    }
     {
       jsonLd && (
         <script type="application/ld+json" set:html={jsonLd} />

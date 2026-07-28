@@ -10,22 +10,28 @@ destinations over time.
 - [Astro](https://astro.build/) with Astro's recommended strict TypeScript
   defaults
 - [Tailwind CSS](https://tailwindcss.com/) 4 through the recommended Vite plugin
-- Astro Content Collections with Zod-validated local JSON entries
+- Astro Content Collections with Zod-validated local JSON and Markdown entries
+- Astro's official sitemap and RSS packages
 - Static HTML with no client-side framework or backend
 
 ## Content architecture
 
-Astro Content Collections are used for countries, restaurants, experiences, and
-packages. They were chosen because collection schemas validate every local
-record at build time, generate TypeScript types automatically, and support
-validated references between each level of the Country → Restaurant →
-Experience → Package relationship.
+Astro Content Collections are used for countries, restaurants, experiences,
+packages, and Journal articles. They were chosen because collection schemas
+validate every local record at build time, generate TypeScript types
+automatically, and support validated references between each level of the
+Country → Restaurant → Experience → Package relationship.
 
-Each entry lives in `src/content/` as JSON. Adding a destination primarily means
-adding new collection entries; country and detail pages are generated from that
-data. The current `heroImage` values point to local gradient placeholder styles
-and can be replaced with image assets later without changing the routes or data
-relationships.
+Structured catalogue entries live in `src/content/` as JSON, while Journal
+articles use Markdown with fully validated frontmatter. Adding a destination or
+article primarily means adding a new collection entry; detail pages are
+generated from that data. The current image values point to local gradient
+placeholder styles and can be replaced with image assets later without changing
+the routes or data relationships.
+
+Draft Journal entries are excluded from generated article routes, the Journal
+index, the sitemap, and the RSS feed. Published entries can reference an
+existing country and experience through validated collection relationships.
 
 Package prices in the current catalogue are explicitly marked as placeholder
 concept prices. They must not be treated as confirmed restaurant pricing.
@@ -66,11 +72,14 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 4 establishes the responsive experience catalogue, country and
-experience filters, restaurant pages, package comparisons, detailed package
-pages, structured metadata, and temporary booking-information routes. No
-checkout, Stripe, backend, CMS, analytics, Supabase integration, AI features,
-or additional UI frameworks are included.
+Milestone 5 adds the SEO-focused Journal with three original demonstration
+articles, related content, reading times, article and breadcrumb structured
+metadata, an automatically generated sitemap, and an RSS feed at
+`/journal/rss.xml`. Draft content is excluded from production output, and a
+project-specific social preview image supports Open Graph and large-card link
+previews. No search service, checkout, Stripe, backend, CMS, analytics,
+Supabase integration, runtime AI features, or additional UI frameworks are
+included.
 
 Canonical metadata currently uses the reserved placeholder host
 `https://experiencehub.example`. Replace the `site` value in
@@ -78,6 +87,7 @@ Canonical metadata currently uses the reserved placeholder host
 
 ## Validation
 
-Each milestone is validated by confirming that the development server starts,
-checking the homepage at mobile and desktop widths, and ensuring that
-`npm run build` completes successfully.
+Each milestone is validated with `npm run build`. Milestone 5 additionally
+checks generated Journal routes and internal links, unique article metadata,
+Article and Breadcrumb JSON-LD, sitemap and RSS output, and production
+exclusion of draft entries.

@@ -250,6 +250,68 @@ a {
     linear-gradient(32deg, #403e37, #8a7766 58%, #c8b89c);
 }
 
+.media-journal-brunch {
+  background:
+    radial-gradient(circle at 72% 28%, rgb(255 236 192 / 80%) 0 9%, transparent 10%),
+    linear-gradient(145deg, transparent 0 45%, rgb(96 54 38 / 18%) 46% 56%, transparent 57%),
+    linear-gradient(28deg, #8f4f3a, #ca8b63 56%, #e8c998);
+}
+
+.media-journal-couple {
+  background:
+    radial-gradient(circle at 30% 25%, rgb(236 190 112 / 65%) 0 7%, transparent 8%),
+    linear-gradient(135deg, transparent 0 46%, rgb(255 255 255 / 9%) 47% 53%, transparent 54%),
+    linear-gradient(28deg, #172e2b, #345f57 54%, #9d7950);
+}
+
+.media-journal-guide {
+  background:
+    linear-gradient(155deg, transparent 0 42%, rgb(89 57 42 / 18%) 43% 56%, transparent 57%),
+    radial-gradient(circle at 70% 30%, rgb(255 246 219 / 58%) 0 10%, transparent 11%),
+    linear-gradient(32deg, #85503c, #ba8065 52%, #dfc9a7);
+}
+
+.journal-prose {
+  color: var(--eh-muted);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+}
+
+.journal-prose > * + * {
+  margin-top: 1.5rem;
+}
+
+.journal-prose h2 {
+  margin-top: 3.25rem;
+  color: var(--eh-text);
+  font-family: Georgia, "Times New Roman", ui-serif, serif;
+  font-size: clamp(1.85rem, 4vw, 2.4rem);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.journal-prose ul,
+.journal-prose ol {
+  padding-left: 1.4rem;
+}
+
+.journal-prose ul {
+  list-style: disc;
+}
+
+.journal-prose ol {
+  list-style: decimal;
+}
+
+.journal-prose li + li {
+  margin-top: 0.65rem;
+}
+
+.journal-prose strong {
+  color: var(--eh-text);
+  font-weight: 650;
+}
+
 .hero-enter {
   animation: hero-enter 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }

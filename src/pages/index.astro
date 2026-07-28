@@ -3,6 +3,7 @@ import ButtonLink from '../components/ButtonLink.astro';
 import CountryCard from '../components/CountryCard.astro';
 import CountrySelector from '../components/CountrySelector.astro';
 import ExperienceCard from '../components/ExperienceCard.astro';
+import JournalCard from '../components/JournalCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
@@ -15,11 +16,13 @@ import {
   getRestaurantForExperience,
   getRestaurantsForCountry,
 } from '../lib/content';
+import { getPublishedJournalEntries } from '../lib/journal';
 
 const title = 'ExperienceHub | Remarkable dining, rooted in place';
 const description =
   'Discover curated restaurant experiences and thoughtful dining packages in Nepal and New Zealand.';
 const graph = await getContentGraph();
+const journalEntries = await getPublishedJournalEntries();
 const featuredExperiences = graph.experiences.filter(
   ({ data }) => data.featured,
 );
@@ -199,56 +202,30 @@ const heroCountry = heroRestaurant
             eyebrow="From the journal"
             title="Notes on food, place, and gathering."
           />
-          <a class="text-link shrink-0" href="#journal-stories">
+          <a class="text-link shrink-0" href="/journal">
             Read the journal
           </a>
         </div>
 
-        <div id="journal-stories" class="mt-12 grid gap-6 md:grid-cols-2 lg:mt-16">
-          <article class="card grid sm:grid-cols-[0.82fr_1.18fr]">
+        {
+          journalEntries.length > 0 ? (
             <div
-              class="media-frame media-journal min-h-64 sm:min-h-full"
-              role="img"
-              aria-label="Abstract editorial placeholder in warm earthen tones"
+              id="journal-stories"
+              class="mt-12 grid gap-6 md:grid-cols-2 lg:mt-16"
             >
+              {journalEntries.slice(0, 2).map((entry) => (
+                <JournalCard entry={entry} />
+              ))}
             </div>
-            <div class="flex flex-col justify-between p-7">
-              <div>
-                <p class="eyebrow">Kathmandu notes</p>
-                <h3 class="mt-4 font-display text-3xl leading-tight">
-                  Why brunch belongs to everyone
-                </h3>
-                <p class="mt-4 leading-7 text-muted">
-                  A short reflection on the shared dishes and easy rhythm that
-                  make a late-morning table feel generous.
-                </p>
-              </div>
-              <a class="text-link mt-8" href="#explore">Read story</a>
+          ) : (
+            <div class="empty-state mt-10">
+              <h3 class="font-display text-2xl">Journal stories are coming soon</h3>
+              <p class="mt-2 text-muted">
+                Practical guides will appear here as they are published.
+              </p>
             </div>
-          </article>
-
-          <article class="card grid sm:grid-cols-[0.82fr_1.18fr]">
-            <div
-              class="media-frame media-new-zealand min-h-64 sm:min-h-full"
-              role="img"
-              aria-label="Abstract editorial placeholder inspired by Auckland's harbour"
-            >
-            </div>
-            <div class="flex flex-col justify-between p-7">
-              <div>
-                <p class="eyebrow">Auckland notes</p>
-                <h3 class="mt-4 font-display text-3xl leading-tight">
-                  The art of an unhurried dinner
-                </h3>
-                <p class="mt-4 leading-7 text-muted">
-                  How thoughtful pacing, a calm room, and a view can turn dinner
-                  for two into a lasting memory.
-                </p>
-              </div>
-              <a class="text-link mt-8" href="#explore">Read story</a>
-            </div>
-          </article>
-        </div>
+          )
+        }
       </div>
     </section>
 

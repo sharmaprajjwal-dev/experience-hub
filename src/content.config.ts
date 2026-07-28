@@ -88,9 +88,40 @@ const packages = defineCollection({
   }),
 });
 
+const journal = defineCollection({
+  loader: glob({
+    pattern: '**/*.md',
+    base: './src/content/journal',
+  }),
+  schema: z.object({
+    title: z.string().min(1),
+    description: z.string().min(1),
+    publicationDate: z.coerce.date(),
+    updatedDate: z.coerce.date().optional(),
+    author: z.string().min(1),
+    category: z.enum([
+      'Dining Guides',
+      'Brunch',
+      'Date Nights',
+      'Group Experiences',
+      'Nepal',
+      'New Zealand',
+    ]),
+    country: reference('countries'),
+    featuredImage: heroImage,
+    imageAlt: z.string().min(1),
+    draft: z.boolean(),
+    featured: z.boolean(),
+    seoTitle: z.string().min(1),
+    seoDescription: z.string().min(1),
+    relatedExperience: reference('experiences'),
+  }),
+});
+
 export const collections = {
   countries,
   restaurants,
   experiences,
   packages,
+  journal,
 };

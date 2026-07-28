@@ -1,0 +1,253 @@
+---
+import { render } from 'astro:content';
+import ButtonLink from '../../components/ButtonLink.astro';
+import CollectionHero from '../../components/CollectionHero.astro';
+import JournalCard from '../../components/JournalCard.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  getContentGraph,
+  getRestaurantForExperience,
+} from '../../lib/content';
+import {
+  formatJournalDate,
+  getPublishedJournalEntries,
+  getReadingTime,
+  getRelatedJournalEntries,
+} from '../../lib/journal';
+
+export async function getStaticPaths() {
+  const entries = await getPublishedJournalEntries();
+
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+  }));
+}
+
+const entries = await getPublishedJournalEntries();
+const entry = entries.find(({ id }) => id === Astro.params.slug);
+
+if (!entry) {
+  throw new Error(`Published Journal entry not found: ${Astro.params.slug}`);
+}
+
+const { Content } = await render(entry);
+const graph = await getContentGraph();
+const relatedExperience = graph.experiences.find(
+  ({ data }) => data.slug === entry.data.relatedExperience.id,
+);
+
+if (!relatedExperience) {
+  throw new Error(
+    `Related experience not found for Journal entry: ${entry.id}`,
+  );
+}
+
+const relatedRestaurant = getRestaurantForExperience(graph, relatedExperience);
+const relatedArticles = getRelatedJournalEntries(entries, entry);
+const country = graph.countries.find(
+  ({ data }) => data.slug === entry.data.country.id,
+);
+
+if (!country) {
+  throw new Error(`Country not found for Journal entry: ${entry.id}`);
+}
+
+const canonicalPath = `/journal/${entry.id}`;
+const siteBase = Astro.site ?? Astro.url;
+const canonicalURL = new URL(canonicalPath, siteBase).toString();
+const readingTime = getReadingTime(entry.body ?? '');
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    '@id': canonicalURL,
+    headline: entry.data.title,
+    description: entry.data.seoDescription,
+    datePublished: entry.data.publicationDate.toISOString(),
+    dateModified: (
+      entry.data.updatedDate ?? entry.data.publicationDate
+    ).toISOString(),
+    author: {
+      '@type': 'Organization',
+      name: entry.data.author,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'ExperienceHub',
+      url: new URL('/', siteBase).toString(),
+    },
+    mainEntityOfPage: canonicalURL,
+    articleSection: entry.data.category,
+    contentLocation: {
+      '@type': 'Country',
+      name: country.data.name,
+    },
+    about: {
+      '@type': 'Service',
+      name: relatedExperience.data.name,
+      url: new URL(
+        `/experiences/${relatedExperience.data.slug}`,
+        siteBase,
+      ).toString(),
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Journal',
+        item: new URL('/journal', siteBase).toString(),
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: entry.data.title,
+      },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title={entry.data.seoTitle}
+  description={entry.data.seoDescription}
+  canonicalURL={canonicalPath}
+  ogType="article"
+  publishedTime={entry.data.publicationDate}
+  modifiedTime={entry.data.updatedDate ?? entry.data.publicationDate}
+  author={entry.data.author}
+  structuredData={structuredData}
+>
+  <SiteHeader />
+  <main>
+    <CollectionHero
+      eyebrow={`${entry.data.category} · ${country.data.name}`}
+      title={entry.data.title}
+      description={entry.data.description}
+      mediaClass={entry.data.featuredImage}
+      imageAlt={entry.data.imageAlt}
+      breadcrumbs={[
+        { label: 'Journal', href: '/journal' },
+        { label: entry.data.title },
+      ]}
+    />
+
+    <section class="border-b border-line bg-surface">
+      <div class="site-container py-6">
+        <dl class="flex flex-wrap gap-x-8 gap-y-3 text-sm">
+          <div class="flex gap-2">
+            <dt class="text-muted">By</dt>
+            <dd class="font-semibold">{entry.data.author}</dd>
+          </div>
+          <div class="flex gap-2">
+            <dt class="text-muted">Published</dt>
+            <dd>
+              <time datetime={entry.data.publicationDate.toISOString()}>
+                {formatJournalDate(entry.data.publicationDate)}
+              </time>
+            </dd>
+          </div>
+          {
+            entry.data.updatedDate && (
+              <div class="flex gap-2">
+                <dt class="text-muted">Updated</dt>
+                <dd>
+                  <time datetime={entry.data.updatedDate.toISOString()}>
+                    {formatJournalDate(entry.data.updatedDate)}
+                  </time>
+                </dd>
+              </div>
+            )
+          }
+          <div class="flex gap-2">
+            <dt class="text-muted">Reading time</dt>
+            <dd>{readingTime} minutes</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="section-shell">
+      <div class="site-container grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+        <article class="journal-prose reading-width">
+          <Content />
+        </article>
+
+        <aside class="rounded-[1.25rem] border border-line bg-surface p-6 lg:sticky lg:top-28">
+          <p class="eyebrow">Related experience</p>
+          <h2 class="mt-4 font-display text-2xl leading-tight tracking-[-0.025em]">
+            {relatedExperience.data.name}
+          </h2>
+          {
+            relatedRestaurant && (
+              <p class="mt-2 text-sm font-medium text-muted">
+                {relatedRestaurant.data.name}
+              </p>
+            )
+          }
+          <p class="mt-4 text-sm leading-6 text-muted">
+            {relatedExperience.data.shortDescription}
+          </p>
+          <ButtonLink
+            class="mt-6 w-full"
+            href={`/experiences/${relatedExperience.data.slug}`}
+          >
+            View experience
+          </ButtonLink>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-rule section-shell bg-surface">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Keep reading"
+          title="Related Journal notes."
+        />
+        {
+          relatedArticles.length > 0 ? (
+            <div class="mt-12 grid gap-6 md:grid-cols-2 lg:mt-16">
+              {relatedArticles.map((relatedEntry) => (
+                <JournalCard entry={relatedEntry} />
+              ))}
+            </div>
+          ) : (
+            <div class="empty-state mt-10">
+              <h2 class="font-display text-2xl">No related articles yet</h2>
+              <p class="mt-2 text-muted">
+                More practical dining guides are being prepared.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="section-rule section-shell bg-ink text-surface">
+      <div class="site-container flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end">
+        <div class="max-w-2xl">
+          <p class="text-xs font-bold tracking-[0.2em] text-stone-400 uppercase">
+            Find your format
+          </p>
+          <h2 class="mt-5 font-display text-4xl leading-tight tracking-[-0.035em] sm:text-5xl">
+            Compare the experiences behind the guidance.
+          </h2>
+          <p class="mt-5 leading-7 text-stone-300">
+            Explore demonstration packages with clear guest guidance,
+            inclusions, duration, and placeholder booking information.
+          </p>
+        </div>
+        <ButtonLink href="/experiences" variant="light">
+          Explore experiences
+        </ButtonLink>
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>
