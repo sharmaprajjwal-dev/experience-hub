@@ -735,6 +735,22 @@ Cloudflare's current Workers route uses a `workers.dev` subdomain. A
 `pages.dev` hostname applies to Cloudflare Pages and is not used by this
 server-capable deployment.
 
+### Current production deployment
+
+ExperienceHub is deployed from the `main` branch through Cloudflare Workers
+Builds:
+
+- **Live URL:** <https://experiencehub.sharmaprajjwal8848.workers.dev>
+- **Worker:** `experiencehub`
+- **Build command:** `npm run build`
+- **Deploy command:** `npx wrangler deploy`
+- **Production source:** `sharmaprajjwal-dev/experience-hub`
+
+`PUBLIC_SITE_URL` is configured to the live Worker origin so canonical URLs,
+Open Graph URLs, sitemaps, and safe checkout return-origin validation use the
+production host. Pushes to `main` deploy automatically; non-production branches
+produce preview versions.
+
 ### Git-based production and preview deployments
 
 In **Workers & Pages**, create or select a Worker named `experiencehub`, connect
@@ -876,8 +892,8 @@ filters, consent, assistant, admin forms, and checkout behavior.
 
 ## Current limitations and future expansion
 
-- No deployment is live until an authenticated Cloudflare account completes the
-  deployment steps and a production origin is configured.
+- The application is live on its Cloudflare Workers subdomain, but no custom
+  domain has been connected yet.
 - Live Supabase Auth, Storage, OpenRouter, analytics, and Stripe flows require
   operator-owned accounts and are never fabricated during local-only checks.
 - The AI rate limiter is per Worker isolate, not a distributed abuse control.
@@ -899,7 +915,8 @@ fulfilment controls, and sandbox-to-live release tests.
 Milestone 13 configures the hybrid application for Cloudflare Workers, adds
 production error and crawler routes, documents public and secret variables,
 provides preview and production commands, and completes domain, business-email,
-SEO, security, and performance launch guidance.
+SEO, security, and performance launch guidance. The production Worker is live
+at <https://experiencehub.sharmaprajjwal8848.workers.dev>.
 
 ## Validation
 
