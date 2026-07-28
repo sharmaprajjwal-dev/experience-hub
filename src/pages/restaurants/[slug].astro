@@ -1,0 +1,165 @@
+---
+import CollectionHero from '../../components/CollectionHero.astro';
+import ExperienceCard from '../../components/ExperienceCard.astro';
+import PackageComparison from '../../components/PackageComparison.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  getContentGraph,
+  getCountryForRestaurant,
+  getExperiencesForRestaurants,
+  getPackagesForExperiences,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+  const { restaurants } = await getContentGraph();
+
+  return restaurants.map(({ data }) => ({
+    params: { slug: data.slug },
+  }));
+}
+
+const graph = await getContentGraph();
+const restaurant = graph.restaurants.find(
+  ({ data }) => data.slug === Astro.params.slug,
+);
+
+if (!restaurant) {
+  throw new Error(`Restaurant not found: ${Astro.params.slug}`);
+}
+
+const country = getCountryForRestaurant(graph, restaurant);
+if (!country) {
+  throw new Error(`Country not found for restaurant: ${restaurant.data.slug}`);
+}
+
+const experiences = getExperiencesForRestaurants(graph, [restaurant]);
+const packages = getPackagesForExperiences(graph, experiences);
+const title = `${restaurant.data.name}, ${restaurant.data.city} | ExperienceHub`;
+const description = restaurant.data.shortDescription;
+const canonicalPath = `/restaurants/${restaurant.data.slug}`;
+const siteBase = Astro.site ?? Astro.url;
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FoodEstablishment',
+    '@id': new URL(canonicalPath, siteBase).toString(),
+    name: restaurant.data.name,
+    description: restaurant.data.shortDescription,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: restaurant.data.city,
+      addressCountry: country.data.countryCode,
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Countries',
+        item: new URL('/countries', siteBase).toString(),
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: country.data.name,
+        item: new URL(`/countries/${country.data.slug}`, siteBase).toString(),
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: restaurant.data.name,
+      },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalURL={canonicalPath}
+  structuredData={structuredData}
+>
+  <SiteHeader />
+  <main>
+    <CollectionHero
+      eyebrow={`${restaurant.data.city} · ${country.data.name}${restaurant.data.fictional ? ' · Fictional demo concept' : ''}`}
+      title={restaurant.data.name}
+      description={restaurant.data.shortDescription}
+      mediaClass={restaurant.data.heroImage}
+      imageAlt={`Placeholder artwork for ${restaurant.data.name} in ${restaurant.data.city}`}
+      breadcrumbs={[
+        { label: 'Countries', href: '/countries' },
+        {
+          label: country.data.name,
+          href: `/countries/${country.data.slug}`,
+        },
+        { label: restaurant.data.name },
+      ]}
+    />
+
+    <section class="section-shell">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Available experiences"
+          title="Choose how you would like to gather."
+          description={`Explore the active ExperienceHub catalogue at ${restaurant.data.name}.`}
+        />
+        {
+          experiences.length > 0 ? (
+            <div class="mt-12 grid gap-6 lg:grid-cols-2 lg:mt-16">
+              {experiences.map((experience) => {
+                const relatedPackages = packages.filter(
+                  ({ data }) =>
+                    data.experienceSlug.id === experience.data.slug,
+                );
+
+                return (
+                  <ExperienceCard
+                    eyebrow={`${experience.data.type} · ${restaurant.data.city}`}
+                    title={experience.data.name}
+                    restaurant={restaurant.data.fictional ? `${restaurant.data.name} — fictional concept` : restaurant.data.name}
+                    description={experience.data.shortDescription}
+                    packageName={`${relatedPackages.length} ${relatedPackages.length === 1 ? 'package' : 'packages'} available`}
+                    mediaClass={experience.data.heroImage}
+                    href={`/experiences/${experience.data.slug}`}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div class="empty-state mt-10">
+              <h2 class="font-display text-2xl">No experiences available yet</h2>
+              <p class="mt-2 text-muted">
+                Experiences for this restaurant are being prepared.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    {
+      packages.length > 0 && (
+        <section class="section-rule section-shell bg-surface">
+          <div class="site-container">
+            <SectionHeading
+              eyebrow="Compare packages"
+              title="Find the right shape for your table."
+            />
+            <div class="mt-12 lg:mt-16">
+              <PackageComparison packages={packages} />
+            </div>
+          </div>
+        </section>
+      )
+    }
+  </main>
+  <SiteFooter />
+</BaseLayout>

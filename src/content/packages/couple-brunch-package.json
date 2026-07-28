@@ -3,16 +3,20 @@
   "slug": "couple-brunch-package",
   "experienceSlug": "signature-brunch-experience",
   "shortDescription": "A relaxed brunch for two with shared plates and a thoughtful sweet finish.",
-  "fullDescription": "An easy late-morning experience for two, pairing a selection of savoury brunch dishes with drinks and dessert in the welcoming atmosphere of The Pizza House.",
+  "fullDescription": "An intimate late-morning experience for two, pairing a more considered presentation of savoury brunch dishes with drinks and dessert in the welcoming atmosphere of The Pizza House.",
   "price": 3600,
+  "priceStatus": "placeholder",
   "currency": "NPR",
   "numberOfGuests": 2,
+  "suggestedGuestRange": "2 guests",
   "duration": "2 hours",
+  "whoItSuits": "Two people seeking a quieter, couple-focused brunch with an intimate presentation and time to linger.",
   "includedItems": [
-    "Shared savoury brunch selection",
-    "Two hot or cold drinks",
+    "Intimately presented savoury brunch selection",
+    "Hot or cold drink for each guest",
     "Dessert to share"
   ],
+  "optionalNotes": "The displayed price is a concept placeholder, not a confirmed price from The Pizza House.",
   "featured": false,
   "active": true,
   "bookingStatus": "coming-soon"

@@ -1,0 +1,152 @@
+---
+import ButtonLink from '../../components/ButtonLink.astro';
+import CollectionHero from '../../components/CollectionHero.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  formatBookingStatus,
+  formatPackagePrice,
+  formatRestaurantLabel,
+  getContentGraph,
+  getCountryForRestaurant,
+  getExperienceForPackage,
+  getRestaurantForExperience,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+  const { packages } = await getContentGraph();
+
+  return packages.map(({ data }) => ({
+    params: { slug: data.slug },
+  }));
+}
+
+const graph = await getContentGraph();
+const packageEntry = graph.packages.find(
+  ({ data }) => data.slug === Astro.params.slug,
+);
+
+if (!packageEntry) {
+  throw new Error(`Package not found: ${Astro.params.slug}`);
+}
+
+const experience = getExperienceForPackage(graph, packageEntry);
+if (!experience) {
+  throw new Error(`Experience not found for package: ${packageEntry.data.slug}`);
+}
+
+const restaurant = getRestaurantForExperience(graph, experience);
+if (!restaurant) {
+  throw new Error(`Restaurant not found for experience: ${experience.data.slug}`);
+}
+
+const country = getCountryForRestaurant(graph, restaurant);
+if (!country) {
+  throw new Error(`Country not found for restaurant: ${restaurant.data.slug}`);
+}
+
+const title = `Booking information: ${packageEntry.data.name} | ExperienceHub`;
+const description = `Booking information for ${packageEntry.data.name}. Checkout is not available yet and no payment will be taken.`;
+const canonicalPath = `/book/${packageEntry.data.slug}`;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalURL={canonicalPath}
+>
+  <SiteHeader />
+  <main>
+    <CollectionHero
+      eyebrow="Temporary booking information"
+      title="Booking is coming in a later milestone."
+      description="This page confirms the package you selected, but checkout is not connected and no payment or reservation can be completed yet."
+      mediaClass={experience.data.heroImage}
+      imageAlt={`Placeholder artwork for ${packageEntry.data.name} booking information`}
+      breadcrumbs={[
+        {
+          label: experience.data.name,
+          href: `/experiences/${experience.data.slug}`,
+        },
+        {
+          label: packageEntry.data.name,
+          href: `/packages/${packageEntry.data.slug}`,
+        },
+        { label: 'Booking information' },
+      ]}
+    />
+
+    <section class="section-shell">
+      <div class="site-container grid gap-10 lg:grid-cols-[1fr_0.8fr]">
+        <article>
+          <p class="eyebrow">Selected package</p>
+          <h2 class="mt-4 font-display text-4xl tracking-[-0.035em]">
+            {packageEntry.data.name}
+          </h2>
+          <p class="mt-5 max-w-2xl text-lg leading-8 text-muted">
+            {packageEntry.data.shortDescription}
+          </p>
+
+          <dl class="mt-8 grid gap-5 border-y border-line py-7 sm:grid-cols-2">
+            <div>
+              <dt class="text-sm text-muted">Restaurant</dt>
+              <dd class="mt-1 font-semibold">
+                {formatRestaurantLabel(restaurant)}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm text-muted">Location</dt>
+              <dd class="mt-1 font-semibold">
+                {restaurant.data.city}, {country.data.name}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm text-muted">Suggested group</dt>
+              <dd class="mt-1 font-semibold">
+                {packageEntry.data.suggestedGuestRange}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm text-muted">Duration</dt>
+              <dd class="mt-1 font-semibold">{packageEntry.data.duration}</dd>
+            </div>
+            <div>
+              <dt class="text-sm text-muted">Price</dt>
+              <dd class="mt-1 font-semibold">
+                {formatPackagePrice(packageEntry)}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm text-muted">Status</dt>
+              <dd class="mt-1 font-semibold">
+                {formatBookingStatus(packageEntry.data.bookingStatus)}
+              </dd>
+            </div>
+          </dl>
+        </article>
+
+        <aside class="h-fit rounded-[1.25rem] border border-line bg-surface p-7 sm:p-8">
+          <p class="eyebrow">No checkout yet</p>
+          <h2 class="mt-4 font-display text-3xl">
+            Your selection has not been reserved.
+          </h2>
+          <p class="mt-4 leading-7 text-muted">
+            Online enquiries, availability, confirmed pricing, and secure
+            checkout will be introduced later. This temporary page does not
+            collect personal or payment information.
+          </p>
+          <div class="mt-7 flex flex-col gap-3">
+            <ButtonLink href={`/packages/${packageEntry.data.slug}`}>
+              Return to package
+            </ButtonLink>
+            <ButtonLink href="/experiences" variant="secondary">
+              Explore experiences
+            </ButtonLink>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

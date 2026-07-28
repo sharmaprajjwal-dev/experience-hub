@@ -1,0 +1,98 @@
+---
+import {
+  formatBookingStatus,
+  formatPackagePrice,
+  type PackageEntry,
+} from '../lib/content';
+
+interface Props {
+  packages: PackageEntry[];
+}
+
+const { packages } = Astro.props;
+---
+
+<div class="overflow-x-auto rounded-[1.25rem] border border-line bg-surface">
+  <table class="w-full min-w-[46rem] border-collapse text-left">
+    <caption class="sr-only">
+      Compare package prices, guest ranges, duration, suitability, and booking
+      status.
+    </caption>
+    <thead>
+      <tr class="border-b border-line">
+        <th class="w-36 p-5 text-xs font-bold tracking-[0.14em] text-muted uppercase" scope="col">
+          Compare
+        </th>
+        {
+          packages.map(({ data }) => (
+            <th class="p-5 font-display text-2xl font-normal" scope="col">
+              {data.name}
+            </th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="border-b border-line">
+        <th class="p-5 text-sm text-muted" scope="row">Price</th>
+        {
+          packages.map((packageEntry) => (
+            <td class="p-5 text-sm font-semibold">
+              {formatPackagePrice(packageEntry)}
+            </td>
+          ))
+        }
+      </tr>
+      <tr class="border-b border-line">
+        <th class="p-5 text-sm text-muted" scope="row">Suggested group</th>
+        {
+          packages.map(({ data }) => (
+            <td class="p-5 text-sm font-semibold">{data.suggestedGuestRange}</td>
+          ))
+        }
+      </tr>
+      <tr class="border-b border-line">
+        <th class="p-5 text-sm text-muted" scope="row">Duration</th>
+        {
+          packages.map(({ data }) => (
+            <td class="p-5 text-sm font-semibold">{data.duration}</td>
+          ))
+        }
+      </tr>
+      <tr class="border-b border-line">
+        <th class="p-5 text-sm text-muted" scope="row">Who it suits</th>
+        {
+          packages.map(({ data }) => (
+            <td class="max-w-xs p-5 text-sm leading-6 text-muted">
+              {data.whoItSuits}
+            </td>
+          ))
+        }
+      </tr>
+      <tr class="border-b border-line">
+        <th class="p-5 text-sm text-muted" scope="row">Booking</th>
+        {
+          packages.map(({ data }) => (
+            <td class="p-5 text-sm font-semibold">
+              {formatBookingStatus(data.bookingStatus)}
+            </td>
+          ))
+        }
+      </tr>
+      <tr>
+        <th class="p-5" scope="row">
+          <span class="sr-only">Package details</span>
+        </th>
+        {
+          packages.map(({ data }) => (
+            <td class="p-5">
+              <a class="text-link" href={`/packages/${data.slug}`}>
+                View package
+              </a>
+            </td>
+          ))
+        }
+      </tr>
+    </tbody>
+  </table>
+</div>

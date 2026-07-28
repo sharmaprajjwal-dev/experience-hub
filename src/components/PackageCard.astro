@@ -1,7 +1,7 @@
 ---
 import {
   formatBookingStatus,
-  formatPrice,
+  formatPackagePrice,
   type PackageEntry,
 } from '../lib/content';
 
@@ -30,7 +30,7 @@ const { data } = packageEntry;
     <div>
       <dt class="text-muted">For</dt>
       <dd class="mt-1 font-semibold">
-        {data.numberOfGuests} {data.numberOfGuests === 1 ? 'guest' : 'guests'}
+        {data.suggestedGuestRange}
       </dd>
     </div>
     <div>
@@ -39,8 +39,8 @@ const { data } = packageEntry;
     </div>
   </dl>
   <div class="mt-7 flex items-end justify-between gap-4">
-    <p class="font-display text-2xl">
-      {formatPrice(data.price, data.currency)}
+    <p class="max-w-44 text-sm font-semibold leading-6 text-ink">
+      {formatPackagePrice(packageEntry)}
     </p>
     <a class="text-link" href={`/packages/${data.slug}`}>Details</a>
   </div>

@@ -27,6 +27,9 @@ data. The current `heroImage` values point to local gradient placeholder styles
 and can be replaced with image assets later without changing the routes or data
 relationships.
 
+Package prices in the current catalogue are explicitly marked as placeholder
+concept prices. They must not be treated as confirmed restaurant pricing.
+
 ## Local installation
 
 Requires Node.js 22.12 or newer.
@@ -63,10 +66,15 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 3 establishes the multi-country information architecture with
-validated local content, reusable country selection, and statically generated
-country, experience, and package routes. No backend, CMS, analytics, Supabase
-integration, AI features, or additional UI frameworks are included.
+Milestone 4 establishes the responsive experience catalogue, country and
+experience filters, restaurant pages, package comparisons, detailed package
+pages, structured metadata, and temporary booking-information routes. No
+checkout, Stripe, backend, CMS, analytics, Supabase integration, AI features,
+or additional UI frameworks are included.
+
+Canonical metadata currently uses the reserved placeholder host
+`https://experiencehub.example`. Replace the `site` value in
+`astro.config.mjs` with the production domain before launch.
 
 ## Validation
 

@@ -5,15 +5,43 @@ import SiteFooter from '../../components/SiteFooter.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import {
+  formatRestaurantLabel,
   getContentGraph,
   getCountryForRestaurant,
   getRestaurantForExperience,
 } from '../../lib/content';
 
 const graph = await getContentGraph();
-const title = 'Dining experiences | ExperienceHub';
+const title = 'Dining experience catalogue | ExperienceHub';
 const description =
-  'Explore curated brunch and dinner experiences across Nepal and New Zealand.';
+  'Filter and compare curated brunch and dinner experiences across Nepal and New Zealand.';
+const catalogueItems = graph.experiences.flatMap((experience) => {
+  const restaurant = getRestaurantForExperience(graph, experience);
+  const country = restaurant
+    ? getCountryForRestaurant(graph, restaurant)
+    : undefined;
+
+  if (!restaurant || !country) return [];
+
+  const packages = graph.packages.filter(
+    ({ data }) => data.experienceSlug.id === experience.data.slug,
+  );
+
+  return [{
+    experience,
+    restaurant,
+    country,
+    packages,
+    countryFilter: country.data.slug,
+    typeFilter: experience.data.type.toLowerCase().replaceAll(' ', '-'),
+  }];
+});
+const featuredItems = catalogueItems.filter(
+  ({ experience }) => experience.data.featured,
+);
+const experienceTypes = [
+  ...new Set(catalogueItems.map(({ experience }) => experience.data.type)),
+].sort();
 ---
 
 <BaseLayout title={title} description={description}>
@@ -22,44 +50,143 @@ const description =
     <section class="section-shell bg-surface">
       <div class="site-container">
         <SectionHeading
-          eyebrow="Experiences"
+          eyebrow="Experience catalogue"
           title="Choose the feeling, not just the table."
-          description="Explore each dining experience across the collection, then choose a package shaped around your occasion."
+          description="Explore the collection by country or dining style, then compare packages shaped around your occasion."
           level="h1"
         />
       </div>
     </section>
 
-    <section class="section-rule section-shell">
-      <div class="site-container">
-        {
-          graph.experiences.length > 0 ? (
-            <div class="grid gap-6 lg:grid-cols-2">
-              {graph.experiences.map((experience) => {
-                const restaurant = getRestaurantForExperience(graph, experience);
-                const country = restaurant
-                  ? getCountryForRestaurant(graph, restaurant)
-                  : undefined;
-                const packages = graph.packages.filter(
-                  ({ data }) =>
-                    data.experienceSlug.id === experience.data.slug,
-                );
+    {
+      featuredItems.length > 0 && (
+        <section class="section-rule section-shell">
+          <div class="site-container">
+            <SectionHeading
+              eyebrow="Featured experiences"
+              title="A considered place to begin."
+            />
+            <div class="mt-12 grid gap-6 lg:grid-cols-2 lg:mt-16">
+              {featuredItems.map(({ experience, restaurant, country, packages }) => (
+                <ExperienceCard
+                  eyebrow={`${restaurant.data.city} · ${country.data.name}`}
+                  title={experience.data.name}
+                  restaurant={formatRestaurantLabel(restaurant)}
+                  description={experience.data.shortDescription}
+                  packageName={`${packages.length} ${packages.length === 1 ? 'package' : 'packages'} available`}
+                  mediaClass={experience.data.heroImage}
+                  href={`/experiences/${experience.data.slug}`}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    }
 
-                return (
-                  <ExperienceCard
-                    eyebrow={`${restaurant?.data.city ?? 'Destination'} · ${country?.data.name ?? 'ExperienceHub'}`}
-                    title={experience.data.name}
-                    restaurant={restaurant?.data.name ?? 'Restaurant to be announced'}
-                    description={experience.data.shortDescription}
-                    packageName={`${packages.length} ${packages.length === 1 ? 'package' : 'packages'} available`}
-                    mediaClass={experience.data.heroImage}
-                    href={`/experiences/${experience.data.slug}`}
-                  />
-                );
-              })}
+    <section class="section-rule section-shell bg-surface" data-catalogue>
+      <div class="site-container">
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <SectionHeading
+            eyebrow="Browse the catalogue"
+            title="Find an experience for your table."
+          />
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <fieldset>
+              <legend class="mb-2 text-xs font-bold tracking-[0.14em] text-muted uppercase">
+                Country
+              </legend>
+              <div class="flex flex-wrap gap-2" data-filter-group="country">
+                <button
+                  class="filter-chip"
+                  type="button"
+                  data-filter-value="all"
+                  aria-pressed="true"
+                >
+                  All
+                </button>
+                {
+                  graph.countries.map(({ data }) => (
+                    <button
+                      class="filter-chip"
+                      type="button"
+                      data-filter-value={data.slug}
+                      aria-pressed="false"
+                    >
+                      {data.name}
+                    </button>
+                  ))
+                }
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend class="mb-2 text-xs font-bold tracking-[0.14em] text-muted uppercase">
+                Experience type
+              </legend>
+              <div class="flex flex-wrap gap-2" data-filter-group="type">
+                <button
+                  class="filter-chip"
+                  type="button"
+                  data-filter-value="all"
+                  aria-pressed="true"
+                >
+                  All
+                </button>
+                {
+                  experienceTypes.map((type) => (
+                    <button
+                      class="filter-chip"
+                      type="button"
+                      data-filter-value={type.toLowerCase().replaceAll(' ', '-')}
+                      aria-pressed="false"
+                    >
+                      {type}
+                    </button>
+                  ))
+                }
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+        <p class="mt-8 text-sm text-muted" aria-live="polite" data-results-count>
+          Showing {catalogueItems.length} {catalogueItems.length === 1 ? 'experience' : 'experiences'}
+        </p>
+
+        {
+          catalogueItems.length > 0 ? (
+            <div class="mt-8 grid gap-6 lg:grid-cols-2" data-catalogue-grid>
+              {catalogueItems.map(
+                ({
+                  experience,
+                  restaurant,
+                  country,
+                  packages,
+                  countryFilter,
+                  typeFilter,
+                }) => (
+                  <div
+                    data-catalogue-item
+                    data-country={countryFilter}
+                    data-type={typeFilter}
+                  >
+                    <ExperienceCard
+                      eyebrow={`${restaurant.data.city} · ${country.data.name}`}
+                      title={experience.data.name}
+                      restaurant={formatRestaurantLabel(restaurant)}
+                      description={experience.data.shortDescription}
+                      packageName={`${packages.length} ${packages.length === 1 ? 'package' : 'packages'} available`}
+                      mediaClass={experience.data.heroImage}
+                      href={`/experiences/${experience.data.slug}`}
+                    />
+                  </div>
+                ),
+              )}
             </div>
           ) : (
-            <div class="empty-state">
+            <div class="empty-state mt-8">
               <h2 class="font-display text-3xl">No experiences available yet</h2>
               <p class="mt-3 text-muted">
                 The first ExperienceHub collection is being prepared.
@@ -67,8 +194,75 @@ const description =
             </div>
           )
         }
+
+        <div class="empty-state mt-8" hidden data-filter-empty>
+          <h2 class="font-display text-2xl">No matching experiences</h2>
+          <p class="mt-2 text-muted">
+            Try another country or experience type.
+          </p>
+        </div>
       </div>
     </section>
   </main>
   <SiteFooter />
 </BaseLayout>
+
+<script>
+  const catalogue = document.querySelector('[data-catalogue]');
+
+  if (catalogue instanceof HTMLElement) {
+    const items = Array.from(
+      catalogue.querySelectorAll<HTMLElement>('[data-catalogue-item]'),
+    );
+    const count = catalogue.querySelector('[data-results-count]');
+    const empty = catalogue.querySelector<HTMLElement>('[data-filter-empty]');
+    const filters = {
+      country: 'all',
+      type: 'all',
+    };
+
+    const updateCatalogue = () => {
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        const countryMatches =
+          filters.country === 'all' ||
+          item.dataset.country === filters.country;
+        const typeMatches =
+          filters.type === 'all' ||
+          item.dataset.type === filters.type;
+        const visible = countryMatches && typeMatches;
+
+        item.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+
+      if (count) {
+        count.textContent = `Showing ${visibleCount} ${visibleCount === 1 ? 'experience' : 'experiences'}`;
+      }
+
+      if (empty) empty.hidden = visibleCount !== 0;
+    };
+
+    catalogue.querySelectorAll<HTMLElement>('[data-filter-group]').forEach(
+      (group) => {
+        const filterName = group.dataset.filterGroup;
+
+        group.querySelectorAll<HTMLButtonElement>('button').forEach((button) => {
+          button.addEventListener('click', () => {
+            if (filterName !== 'country' && filterName !== 'type') return;
+
+            filters[filterName] = button.dataset.filterValue ?? 'all';
+            group.querySelectorAll('button').forEach((groupButton) => {
+              groupButton.setAttribute(
+                'aria-pressed',
+                String(groupButton === button),
+              );
+            });
+            updateCatalogue();
+          });
+        });
+      },
+    );
+  }
+</script>

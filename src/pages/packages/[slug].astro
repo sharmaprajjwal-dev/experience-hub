@@ -1,12 +1,14 @@
 ---
 import ButtonLink from '../../components/ButtonLink.astro';
 import CollectionHero from '../../components/CollectionHero.astro';
+import PackageCard from '../../components/PackageCard.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import {
   formatBookingStatus,
-  formatPrice,
+  formatPackagePrice,
   getContentGraph,
   getCountryForRestaurant,
   getExperienceForPackage,
@@ -45,11 +47,87 @@ if (!country) {
   throw new Error(`Country not found for restaurant: ${restaurant.data.slug}`);
 }
 
-const title = `${packageEntry.data.name} | ExperienceHub`;
-const description = packageEntry.data.shortDescription;
+const relatedPackages = graph.packages.filter(
+  ({ data }) =>
+    data.experienceSlug.id === experience.data.slug &&
+    data.slug !== packageEntry.data.slug,
+);
+const title = `${packageEntry.data.name} at ${restaurant.data.name} | ExperienceHub`;
+const description = `${packageEntry.data.shortDescription} View placeholder pricing, inclusions, guest guidance, duration, and booking information.`;
+const canonicalPath = `/packages/${packageEntry.data.slug}`;
+const siteBase = Astro.site ?? Astro.url;
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': new URL(canonicalPath, siteBase).toString(),
+    url: new URL(canonicalPath, siteBase).toString(),
+    name: packageEntry.data.name,
+    description: packageEntry.data.fullDescription,
+    serviceType: `${experience.data.type} dining package`,
+    provider: {
+      '@type': 'FoodEstablishment',
+      name: restaurant.data.name,
+      description: restaurant.data.shortDescription,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: restaurant.data.city,
+        addressCountry: country.data.countryCode,
+      },
+    },
+    areaServed: {
+      '@type': 'Country',
+      name: country.data.name,
+    },
+    audience: {
+      '@type': 'Audience',
+      audienceType: packageEntry.data.whoItSuits,
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: country.data.name,
+        item: new URL(`/countries/${country.data.slug}`, siteBase).toString(),
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: restaurant.data.name,
+        item: new URL(
+          `/restaurants/${restaurant.data.slug}`,
+          siteBase,
+        ).toString(),
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: experience.data.name,
+        item: new URL(
+          `/experiences/${experience.data.slug}`,
+          siteBase,
+        ).toString(),
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: packageEntry.data.name,
+      },
+    ],
+  },
+];
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalURL={canonicalPath}
+  structuredData={structuredData}
+>
   <SiteHeader />
   <main>
     <CollectionHero
@@ -59,7 +137,14 @@ const description = packageEntry.data.shortDescription;
       mediaClass={experience.data.heroImage}
       imageAlt={`Placeholder artwork for ${packageEntry.data.name}`}
       breadcrumbs={[
-        { label: 'Experiences', href: '/experiences' },
+        {
+          label: country.data.name,
+          href: `/countries/${country.data.slug}`,
+        },
+        {
+          label: restaurant.data.name,
+          href: `/restaurants/${restaurant.data.slug}`,
+        },
         {
           label: experience.data.name,
           href: `/experiences/${experience.data.slug}`,
@@ -79,50 +164,85 @@ const description = packageEntry.data.shortDescription;
             {packageEntry.data.fullDescription}
           </p>
 
+          <h3 class="mt-10 text-lg font-semibold">Who it suits</h3>
+          <p class="mt-3 leading-7 text-muted">
+            {packageEntry.data.whoItSuits}
+          </p>
+
           <h3 class="mt-10 text-lg font-semibold">Included</h3>
           <ul class="mt-5 space-y-3" role="list">
             {
               packageEntry.data.includedItems.map((item) => (
                 <li class="flex gap-3 text-muted">
-                  <span class="mt-2 size-1.5 shrink-0 rounded-full bg-success" aria-hidden="true" />
+                  <span
+                    class="mt-2 size-1.5 shrink-0 rounded-full bg-success"
+                    aria-hidden="true"
+                  />
                   <span>{item}</span>
                 </li>
               ))
             }
           </ul>
 
-          {
-            packageEntry.data.optionalNotes && (
-              <div class="mt-10 border-l-2 border-accent pl-5">
-                <h3 class="text-sm font-semibold">A helpful note</h3>
-                <p class="mt-2 leading-7 text-muted">
-                  {packageEntry.data.optionalNotes}
-                </p>
-              </div>
-            )
-          }
+          <div class="mt-10 border-l-2 border-accent pl-5">
+            <h3 class="text-sm font-semibold">Important notes</h3>
+            <p class="mt-2 leading-7 text-muted">
+              {
+                packageEntry.data.optionalNotes ??
+                  'Package details are concept information and may change before booking opens.'
+              }
+            </p>
+          </div>
         </article>
 
         <aside class="h-fit rounded-[1.25rem] border border-line bg-surface p-7 sm:p-8">
           <p class="eyebrow">At a glance</p>
-          <p class="mt-5 font-display text-4xl">
-            {formatPrice(packageEntry.data.price, packageEntry.data.currency)}
+          <p class="mt-5 text-xl font-semibold leading-7">
+            {formatPackagePrice(packageEntry)}
           </p>
+          {
+            packageEntry.data.priceStatus === 'placeholder' && (
+              <p class="mt-2 text-xs leading-5 text-muted">
+                This is concept pricing and is not confirmed by the restaurant.
+              </p>
+            )
+          }
           <dl class="mt-7 divide-y divide-line border-y border-line">
             <div class="flex justify-between gap-4 py-4">
-              <dt class="text-muted">Guests</dt>
-              <dd class="font-semibold">{packageEntry.data.numberOfGuests}</dd>
+              <dt class="text-muted">Guest count</dt>
+              <dd class="text-right font-semibold">
+                {packageEntry.data.numberOfGuests}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4 py-4">
+              <dt class="text-muted">Suggested range</dt>
+              <dd class="text-right font-semibold">
+                {packageEntry.data.suggestedGuestRange}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 py-4">
               <dt class="text-muted">Duration</dt>
-              <dd class="text-right font-semibold">{packageEntry.data.duration}</dd>
+              <dd class="text-right font-semibold">
+                {packageEntry.data.duration}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 py-4">
               <dt class="text-muted">Restaurant</dt>
-              <dd class="text-right font-semibold">{restaurant.data.name}</dd>
+              <dd class="text-right font-semibold">
+                {restaurant.data.name}
+                {restaurant.data.fictional && (
+                  <span class="block text-xs font-normal text-muted">
+                    Fictional demo concept
+                  </span>
+                )}
+              </dd>
             </div>
             <div class="flex justify-between gap-4 py-4">
-              <dt class="text-muted">Status</dt>
+              <dt class="text-muted">Country</dt>
+              <dd class="text-right font-semibold">{country.data.name}</dd>
+            </div>
+            <div class="flex justify-between gap-4 py-4">
+              <dt class="text-muted">Booking state</dt>
               <dd class="text-right font-semibold">
                 {formatBookingStatus(packageEntry.data.bookingStatus)}
               </dd>
@@ -130,14 +250,62 @@ const description = packageEntry.data.shortDescription;
           </dl>
           <ButtonLink
             class="mt-7 w-full"
-            href={`/experiences/${experience.data.slug}`}
+            href={`/book/${packageEntry.data.slug}`}
           >
-            View experience
+            Booking information
           </ButtonLink>
           <p class="mt-4 text-center text-xs leading-5 text-muted">
-            Booking functionality will be introduced in a later milestone.
+            Checkout is not connected yet. No payment will be taken.
           </p>
         </aside>
+      </div>
+    </section>
+
+    <section class="section-rule section-shell bg-surface">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="The experience"
+          title={experience.data.name}
+          description={experience.data.longDescription}
+        />
+        <div class="mt-8 flex flex-wrap gap-3">
+          <ButtonLink href={`/experiences/${experience.data.slug}`}>
+            View experience
+          </ButtonLink>
+          <ButtonLink
+            href={`/restaurants/${restaurant.data.slug}`}
+            variant="secondary"
+          >
+            View restaurant
+          </ButtonLink>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule section-shell">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Related packages"
+          title="Other ways to gather."
+        />
+        {
+          relatedPackages.length > 0 ? (
+            <div class="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3 lg:mt-16">
+              {relatedPackages.map((relatedPackage) => (
+                <PackageCard packageEntry={relatedPackage} />
+              ))}
+            </div>
+          ) : (
+            <div class="empty-state mt-10">
+              <h3 class="font-display text-2xl">
+                This is the only package for this experience
+              </h3>
+              <p class="mt-2 text-muted">
+                More package concepts may be added as the catalogue grows.
+              </p>
+            </div>
+          )
+        }
       </div>
     </section>
   </main>

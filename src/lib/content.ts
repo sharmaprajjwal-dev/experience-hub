@@ -183,6 +183,23 @@ export function formatPrice(price: number, currency: string) {
   }).format(price);
 }
 
+export function formatPackagePrice(packageEntry: PackageEntry) {
+  const formattedPrice = formatPrice(
+    packageEntry.data.price,
+    packageEntry.data.currency,
+  );
+
+  return packageEntry.data.priceStatus === 'placeholder'
+    ? `Placeholder price · ${formattedPrice}`
+    : formattedPrice;
+}
+
+export function formatRestaurantLabel(restaurant: RestaurantEntry) {
+  return restaurant.data.fictional
+    ? `${restaurant.data.name} — fictional concept`
+    : restaurant.data.name;
+}
+
 export function formatBookingStatus(status: PackageEntry['data']['bookingStatus']) {
   const labels = {
     available: 'Available',

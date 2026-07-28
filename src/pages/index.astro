@@ -11,6 +11,7 @@ import {
   getContentGraph,
   getCountryForRestaurant,
   getExperiencesForRestaurants,
+  formatRestaurantLabel,
   getRestaurantForExperience,
   getRestaurantsForCountry,
 } from '../lib/content';
@@ -142,7 +143,7 @@ const heroCountry = heroRestaurant
                 <ExperienceCard
                   eyebrow={`${restaurant?.data.city ?? 'Destination'} · ${country?.data.name ?? 'ExperienceHub'}`}
                   title={experience.data.name}
-                  restaurant={restaurant?.data.name ?? 'Restaurant to be announced'}
+                  restaurant={restaurant ? formatRestaurantLabel(restaurant) : 'Restaurant to be announced'}
                   description={experience.data.shortDescription}
                   packageName={`${packages.length} ${packages.length === 1 ? 'package' : 'packages'} available`}
                   mediaClass={experience.data.heroImage}

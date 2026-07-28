@@ -5,15 +5,18 @@
   "shortDescription": "A generous shared brunch arranged for a relaxed family table.",
   "fullDescription": "Designed for families who want an easy celebration without rushing, this package brings together shareable brunch favourites, drinks, and a sweet finish for the table.",
   "price": 6500,
+  "priceStatus": "placeholder",
   "currency": "NPR",
   "numberOfGuests": 4,
+  "suggestedGuestRange": "4–6 guests",
   "duration": "2 hours 30 minutes",
+  "whoItSuits": "Families looking for a relaxed, family-friendly brunch with generous shared selections and space to spend time together.",
   "includedItems": [
-    "Shared selection of signature brunch dishes",
-    "Hot or cold drink for each guest",
+    "Family-style shared selection of signature brunch dishes",
+    "Hot or cold drink for every guest",
     "Dessert selection for the table"
   ],
-  "optionalNotes": "Additional guests can be discussed with the restaurant when booking becomes available.",
+  "optionalNotes": "The displayed price is a concept placeholder, not a confirmed price from The Pizza House. Additional guests and dietary needs can be discussed when enquiries open.",
   "featured": true,
   "active": true,
   "bookingStatus": "coming-soon"

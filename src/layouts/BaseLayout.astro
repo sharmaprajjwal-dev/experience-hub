@@ -6,6 +6,7 @@ interface Props {
   description?: string;
   canonicalURL?: URL | string;
   ogType?: 'website' | 'article';
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 const {
@@ -13,11 +14,15 @@ const {
   description = 'Discover thoughtfully curated dining experiences and packages in remarkable destinations.',
   canonicalURL,
   ogType = 'website',
+  structuredData,
 } = Astro.props;
 
 const canonical = canonicalURL
-  ? new URL(canonicalURL, Astro.url).toString()
-  : undefined;
+  ? new URL(canonicalURL, Astro.site ?? Astro.url).toString()
+  : Astro.site
+    ? new URL(Astro.url.pathname, Astro.site).toString()
+    : undefined;
+const jsonLd = structuredData ? JSON.stringify(structuredData) : undefined;
 ---
 
 <!doctype html>
@@ -32,6 +37,12 @@ const canonical = canonicalURL
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content={ogType} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    {
+      jsonLd && (
+        <script type="application/ld+json" set:html={jsonLd} />
+      )
+    }
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body class="bg-background text-ink antialiased">

@@ -1,6 +1,6 @@
 ---
 import CollectionHero from '../../components/CollectionHero.astro';
-import PackageCard from '../../components/PackageCard.astro';
+import PackageComparison from '../../components/PackageComparison.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
@@ -80,9 +80,14 @@ const description = experience.data.shortDescription;
           <p class="mt-4 leading-7 text-muted">
             {restaurant.data.shortDescription}
           </p>
-          <a class="text-link mt-6" href={`/countries/${country.data.slug}`}>
-            Explore {country.data.name}
-          </a>
+          <div class="mt-6 flex flex-col items-start gap-3">
+            <a class="text-link" href={`/restaurants/${restaurant.data.slug}`}>
+              View restaurant
+            </a>
+            <a class="text-link" href={`/countries/${country.data.slug}`}>
+              Explore {country.data.name}
+            </a>
+          </div>
         </aside>
       </div>
     </section>
@@ -96,10 +101,8 @@ const description = experience.data.shortDescription;
         />
         {
           packages.length > 0 ? (
-            <div class="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3 lg:mt-16">
-              {packages.map((packageEntry) => (
-                <PackageCard packageEntry={packageEntry} />
-              ))}
+            <div class="mt-12 lg:mt-16">
+              <PackageComparison packages={packages} />
             </div>
           ) : (
             <div class="empty-state mt-10">

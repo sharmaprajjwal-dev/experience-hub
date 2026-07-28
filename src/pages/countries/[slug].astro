@@ -9,6 +9,7 @@ import SiteHeader from '../../components/SiteHeader.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import {
   getContentGraph,
+  formatRestaurantLabel,
   getExperiencesForRestaurants,
   getPackagesForExperiences,
   getRestaurantForExperience,
@@ -86,6 +87,9 @@ const description = country.data.shortDescription;
                     <p class="mt-4 leading-7 text-muted">
                       {data.shortDescription}
                     </p>
+                    <a class="text-link mt-6" href={`/restaurants/${data.slug}`}>
+                      View restaurant
+                    </a>
                   </div>
                 </article>
               ))}
@@ -122,7 +126,7 @@ const description = country.data.shortDescription;
                   <ExperienceCard
                     eyebrow={`${experience.data.type} · ${restaurant?.data.city ?? country.data.name}`}
                     title={experience.data.name}
-                    restaurant={restaurant?.data.name ?? 'Restaurant to be announced'}
+                    restaurant={restaurant ? formatRestaurantLabel(restaurant) : 'Restaurant to be announced'}
                     description={experience.data.shortDescription}
                     packageName={`${relatedPackages.length} ${relatedPackages.length === 1 ? 'package' : 'packages'} available`}
                     mediaClass={experience.data.heroImage}

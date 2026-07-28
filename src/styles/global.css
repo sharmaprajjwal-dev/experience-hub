@@ -85,6 +85,31 @@ a {
   padding: clamp(2rem, 5vw, 4rem);
 }
 
+.filter-chip {
+  min-height: 2.75rem;
+  border: 1px solid var(--eh-border);
+  border-radius: 999px;
+  background: var(--eh-surface);
+  padding: 0.5rem 0.9rem;
+  color: var(--eh-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.filter-chip:hover {
+  border-color: var(--eh-text);
+}
+
+.filter-chip[aria-pressed="true"] {
+  border-color: var(--eh-text);
+  background: var(--eh-text);
+  color: var(--eh-surface);
+}
+
 .eyebrow {
   color: var(--eh-accent);
   font-size: 0.72rem;
