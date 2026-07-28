@@ -4,10 +4,10 @@
   "countrySlug": "new-zealand",
   "city": "Auckland",
   "shortDescription": "A fictional Auckland dining room imagined around coastal produce, quiet interiors, and an unhurried harbour outlook.",
-  "heroImage": "/images/auckland-harbour.jpg",
-  "imageAlt": "Auckland Harbour Bridge at sunset; illustrative city photography for this fictional concept",
+  "heroImage": "/images/new-zealand-dining-unsplash.jpg",
+  "imageAlt": "An elegant, warmly lit dining room illustrating the fictional Harbour and Pine concept",
   "imageWidth": 1600,
-  "imageHeight": 1007,
+  "imageHeight": 2093,
   "fictional": true,
   "active": true
 }

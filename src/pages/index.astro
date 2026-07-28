@@ -35,15 +35,18 @@ const leadRestaurants = leadCountry
 const leadExperiences = getExperiencesForRestaurants(graph, leadRestaurants);
 const heroExperience =
   leadExperiences.find(({ data }) => data.featured) ?? featuredExperiences[0];
-const heroUsesImage = heroExperience
-  ? !heroExperience.data.heroImage.startsWith('media-')
-  : false;
 const heroRestaurant = heroExperience
   ? getRestaurantForExperience(graph, heroExperience)
   : undefined;
 const heroCountry = heroRestaurant
   ? getCountryForRestaurant(graph, heroRestaurant)
   : undefined;
+const homepageHeroImage = {
+  src: '/images/home-hero-unsplash.jpg',
+  alt: 'A warmly lit restaurant table arranged with shared dishes and place settings',
+  width: 1600,
+  height: 1067,
+};
 ---
 
 <BaseLayout title={title} description={description}>
@@ -74,31 +77,16 @@ const heroCountry = heroRestaurant
         </div>
 
         <div
-          class:list={[
-            'media-frame hero-enter hero-enter--delay aspect-[4/5] rounded-[1.5rem] sm:aspect-[5/4] lg:aspect-[4/5]',
-            heroUsesImage
-              ? false
-              : heroExperience?.data.heroImage ?? 'media-journal',
-          ]}
-          role={!heroUsesImage ? 'img' : undefined}
-          aria-label={
-            !heroUsesImage
-              ? `Atmospheric placeholder artwork for ${heroExperience?.data.name ?? 'a featured dining experience'}`
-              : undefined
-          }
+          class="media-frame hero-enter hero-enter--delay aspect-[4/5] rounded-[1.5rem] sm:aspect-[5/4] lg:aspect-[4/5]"
         >
-          {
-            heroUsesImage && heroExperience && (
-              <img
-                class="absolute inset-0 h-full w-full object-cover"
-                src={heroExperience.data.heroImage}
-                alt={heroExperience.data.imageAlt ?? heroExperience.data.name}
-                width={heroExperience.data.imageWidth ?? 1200}
-                height={heroExperience.data.imageHeight ?? 1500}
-                decoding="async"
-              />
-            )
-          }
+          <img
+            class="absolute inset-0 h-full w-full object-cover"
+            src={homepageHeroImage.src}
+            alt={homepageHeroImage.alt}
+            width={homepageHeroImage.width}
+            height={homepageHeroImage.height}
+            decoding="async"
+          />
           <div
             class="absolute right-[12%] bottom-[11%] z-10 max-w-64 rounded-xl border border-white/30 bg-black/20 p-5 text-white backdrop-blur-md"
           >
