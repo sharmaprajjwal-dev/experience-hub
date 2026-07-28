@@ -1,0 +1,74 @@
+---
+import ExperienceCard from '../../components/ExperienceCard.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  getContentGraph,
+  getCountryForRestaurant,
+  getRestaurantForExperience,
+} from '../../lib/content';
+
+const graph = await getContentGraph();
+const title = 'Dining experiences | ExperienceHub';
+const description =
+  'Explore curated brunch and dinner experiences across Nepal and New Zealand.';
+---
+
+<BaseLayout title={title} description={description}>
+  <SiteHeader />
+  <main>
+    <section class="section-shell bg-surface">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Experiences"
+          title="Choose the feeling, not just the table."
+          description="Explore each dining experience across the collection, then choose a package shaped around your occasion."
+          level="h1"
+        />
+      </div>
+    </section>
+
+    <section class="section-rule section-shell">
+      <div class="site-container">
+        {
+          graph.experiences.length > 0 ? (
+            <div class="grid gap-6 lg:grid-cols-2">
+              {graph.experiences.map((experience) => {
+                const restaurant = getRestaurantForExperience(graph, experience);
+                const country = restaurant
+                  ? getCountryForRestaurant(graph, restaurant)
+                  : undefined;
+                const packages = graph.packages.filter(
+                  ({ data }) =>
+                    data.experienceSlug.id === experience.data.slug,
+                );
+
+                return (
+                  <ExperienceCard
+                    eyebrow={`${restaurant?.data.city ?? 'Destination'} · ${country?.data.name ?? 'ExperienceHub'}`}
+                    title={experience.data.name}
+                    restaurant={restaurant?.data.name ?? 'Restaurant to be announced'}
+                    description={experience.data.shortDescription}
+                    packageName={`${packages.length} ${packages.length === 1 ? 'package' : 'packages'} available`}
+                    mediaClass={experience.data.heroImage}
+                    href={`/experiences/${experience.data.slug}`}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div class="empty-state">
+              <h2 class="font-display text-3xl">No experiences available yet</h2>
+              <p class="mt-3 text-muted">
+                The first ExperienceHub collection is being prepared.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

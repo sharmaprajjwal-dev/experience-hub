@@ -1,0 +1,73 @@
+---
+interface Breadcrumb {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  eyebrow: string;
+  title: string;
+  description: string;
+  mediaClass: string;
+  imageAlt: string;
+  breadcrumbs?: Breadcrumb[];
+}
+
+const {
+  eyebrow,
+  title,
+  description,
+  mediaClass,
+  imageAlt,
+  breadcrumbs = [],
+} = Astro.props;
+---
+
+<section class="border-b border-line bg-surface">
+  <div
+    class="site-container grid items-center gap-12 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:py-24"
+  >
+    <div class="max-w-3xl">
+      {
+        breadcrumbs.length > 0 && (
+          <nav aria-label="Breadcrumb">
+            <ol class="mb-7 flex flex-wrap gap-2 text-xs text-muted" role="list">
+              {breadcrumbs.map((item, index) => (
+                <li class="flex items-center gap-2">
+                  {item.href ? (
+                    <a class="hover:text-ink" href={item.href}>
+                      {item.label}
+                    </a>
+                  ) : (
+                    <span aria-current="page">{item.label}</span>
+                  )}
+                  {index < breadcrumbs.length - 1 && (
+                    <span aria-hidden="true">/</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+      <p class="eyebrow">{eyebrow}</p>
+      <h1
+        class="mt-5 font-display text-[clamp(3.25rem,7vw,6.5rem)] leading-[0.98] tracking-[-0.045em] text-balance"
+      >
+        {title}
+      </h1>
+      <p class="mt-7 max-w-2xl text-lg leading-8 text-muted sm:text-xl">
+        {description}
+      </p>
+    </div>
+    <div
+      class:list={[
+        'media-frame aspect-[4/3] rounded-[1.5rem] lg:aspect-[5/4]',
+        mediaClass,
+      ]}
+      role="img"
+      aria-label={imageAlt}
+    >
+    </div>
+  </div>
+</section>

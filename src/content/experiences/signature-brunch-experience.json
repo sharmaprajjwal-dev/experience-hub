@@ -1,0 +1,11 @@
+{
+  "name": "Signature Brunch Experience",
+  "slug": "signature-brunch-experience",
+  "restaurantSlug": "the-pizza-house",
+  "type": "Brunch",
+  "shortDescription": "A lively late-morning table with shareable favourites, thoughtful details, and room to linger.",
+  "longDescription": "The Signature Brunch Experience brings the easy warmth of The Pizza House to a generous late-morning gathering. Shared dishes arrive at a relaxed pace, with packages designed around families, couples, and groups of friends.",
+  "heroImage": "media-nepal",
+  "featured": true,
+  "active": true
+}

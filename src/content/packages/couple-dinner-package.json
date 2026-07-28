@@ -1,0 +1,20 @@
+{
+  "name": "Couple Dinner Package",
+  "slug": "couple-dinner-package",
+  "experienceSlug": "harbourlight-dinner-for-two",
+  "shortDescription": "An intimate coastal dinner package created for two.",
+  "fullDescription": "A fictional premium dining package at Harbour & Pine, featuring a paced seasonal menu, a welcome drink, and a finishing course served in an intimate harbour-inspired setting.",
+  "price": 220,
+  "currency": "NZD",
+  "numberOfGuests": 2,
+  "duration": "2 hours 30 minutes",
+  "includedItems": [
+    "Welcome drink for two",
+    "Three-course seasonal dinner",
+    "Tea or coffee to finish"
+  ],
+  "optionalNotes": "Harbour & Pine and this package are fictional concepts created for ExperienceHub.",
+  "featured": true,
+  "active": true,
+  "bookingStatus": "coming-soon"
+}

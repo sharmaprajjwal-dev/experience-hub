@@ -1,0 +1,172 @@
+---
+import CollectionHero from '../../components/CollectionHero.astro';
+import CountrySelector from '../../components/CountrySelector.astro';
+import ExperienceCard from '../../components/ExperienceCard.astro';
+import PackageCard from '../../components/PackageCard.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  getContentGraph,
+  getExperiencesForRestaurants,
+  getPackagesForExperiences,
+  getRestaurantForExperience,
+  getRestaurantsForCountry,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+  const { countries } = await getContentGraph();
+
+  return countries.map(({ data }) => ({
+    params: { slug: data.slug },
+  }));
+}
+
+const graph = await getContentGraph();
+const country = graph.countries.find(
+  ({ data }) => data.slug === Astro.params.slug,
+);
+
+if (!country) {
+  throw new Error(`Country not found: ${Astro.params.slug}`);
+}
+
+const restaurants = getRestaurantsForCountry(graph, country.data.slug);
+const experiences = getExperiencesForRestaurants(graph, restaurants);
+const packages = getPackagesForExperiences(graph, experiences);
+const title = `${country.data.name} dining experiences | ExperienceHub`;
+const description = country.data.shortDescription;
+---
+
+<BaseLayout title={title} description={description}>
+  <SiteHeader />
+  <main>
+    <CollectionHero
+      eyebrow={`${country.data.countryCode} · ${country.data.currencyCode}`}
+      title={country.data.name}
+      description={country.data.shortDescription}
+      mediaClass={country.data.heroImage}
+      imageAlt={`Atmospheric placeholder artwork inspired by ${country.data.name}`}
+      breadcrumbs={[
+        { label: 'Countries', href: '/countries' },
+        { label: country.data.name },
+      ]}
+    />
+
+    <section class="section-shell">
+      <div class="site-container">
+        <CountrySelector currentSlug={country.data.slug} />
+      </div>
+    </section>
+
+    <section class="section-rule section-shell bg-surface">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Restaurants"
+          title={`Places to gather in ${country.data.name}.`}
+          description="Each restaurant anchors the experiences and packages available in this destination."
+        />
+        {
+          restaurants.length > 0 ? (
+            <div class="mt-12 grid gap-6 md:grid-cols-2 lg:mt-16">
+              {restaurants.map(({ data }) => (
+                <article class="card">
+                  <div
+                    class:list={[
+                      'media-frame aspect-[16/9]',
+                      data.heroImage,
+                    ]}
+                    role="img"
+                    aria-label={`Placeholder artwork for ${data.name} in ${data.city}`}
+                  />
+                  <div class="p-6 sm:p-8">
+                    <p class="eyebrow">{data.city}</p>
+                    <h3 class="mt-4 font-display text-3xl">{data.name}</h3>
+                    <p class="mt-4 leading-7 text-muted">
+                      {data.shortDescription}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div class="empty-state mt-10">
+              <h3 class="font-display text-2xl">No restaurants available yet</h3>
+              <p class="mt-2 text-muted">
+                Restaurant partners for this country will appear here.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="section-shell">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Experiences"
+          title={`Curated experiences in ${country.data.name}.`}
+        />
+        {
+          experiences.length > 0 ? (
+            <div class="mt-12 grid gap-6 lg:grid-cols-2 lg:mt-16">
+              {experiences.map((experience) => {
+                const restaurant = getRestaurantForExperience(graph, experience);
+                const relatedPackages = packages.filter(
+                  ({ data }) =>
+                    data.experienceSlug.id === experience.data.slug,
+                );
+
+                return (
+                  <ExperienceCard
+                    eyebrow={`${experience.data.type} · ${restaurant?.data.city ?? country.data.name}`}
+                    title={experience.data.name}
+                    restaurant={restaurant?.data.name ?? 'Restaurant to be announced'}
+                    description={experience.data.shortDescription}
+                    packageName={`${relatedPackages.length} ${relatedPackages.length === 1 ? 'package' : 'packages'} available`}
+                    mediaClass={experience.data.heroImage}
+                    href={`/experiences/${experience.data.slug}`}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div class="empty-state mt-10">
+              <h3 class="font-display text-2xl">No experiences available yet</h3>
+              <p class="mt-2 text-muted">
+                Curated experiences for this country are being prepared.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="section-rule section-shell bg-surface">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Packages"
+          title="Choose the package that fits your gathering."
+        />
+        {
+          packages.length > 0 ? (
+            <div class="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3 lg:mt-16">
+              {packages.map((packageEntry) => (
+                <PackageCard packageEntry={packageEntry} />
+              ))}
+            </div>
+          ) : (
+            <div class="empty-state mt-10">
+              <h3 class="font-display text-2xl">No packages available yet</h3>
+              <p class="mt-2 text-muted">
+                Packages will appear when experiences become available.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

@@ -1,0 +1,20 @@
+{
+  "name": "Friends Brunch Package",
+  "slug": "friends-brunch-package",
+  "experienceSlug": "signature-brunch-experience",
+  "shortDescription": "A sociable spread of shareable favourites for a group of friends.",
+  "fullDescription": "Built for an upbeat table, this package offers a generous mix of brunch favourites, refreshing drinks, and a shared dessert with plenty of time to catch up.",
+  "price": 5600,
+  "currency": "NPR",
+  "numberOfGuests": 4,
+  "duration": "2 hours",
+  "includedItems": [
+    "Selection of shareable brunch dishes",
+    "One drink for each guest",
+    "Shared dessert selection"
+  ],
+  "optionalNotes": "The table can note dietary preferences when enquiries open.",
+  "featured": false,
+  "active": true,
+  "bookingStatus": "coming-soon"
+}

@@ -1,0 +1,117 @@
+---
+import CollectionHero from '../../components/CollectionHero.astro';
+import PackageCard from '../../components/PackageCard.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  getContentGraph,
+  getCountryForRestaurant,
+  getRestaurantForExperience,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+  const { experiences } = await getContentGraph();
+
+  return experiences.map(({ data }) => ({
+    params: { slug: data.slug },
+  }));
+}
+
+const graph = await getContentGraph();
+const experience = graph.experiences.find(
+  ({ data }) => data.slug === Astro.params.slug,
+);
+
+if (!experience) {
+  throw new Error(`Experience not found: ${Astro.params.slug}`);
+}
+
+const restaurant = getRestaurantForExperience(graph, experience);
+if (!restaurant) {
+  throw new Error(`Restaurant not found for experience: ${experience.data.slug}`);
+}
+
+const country = getCountryForRestaurant(graph, restaurant);
+if (!country) {
+  throw new Error(`Country not found for restaurant: ${restaurant.data.slug}`);
+}
+
+const packages = graph.packages.filter(
+  ({ data }) => data.experienceSlug.id === experience.data.slug,
+);
+const title = `${experience.data.name} | ExperienceHub`;
+const description = experience.data.shortDescription;
+---
+
+<BaseLayout title={title} description={description}>
+  <SiteHeader />
+  <main>
+    <CollectionHero
+      eyebrow={`${experience.data.type} · ${restaurant.data.city}, ${country.data.name}`}
+      title={experience.data.name}
+      description={experience.data.shortDescription}
+      mediaClass={experience.data.heroImage}
+      imageAlt={`Placeholder artwork for ${experience.data.name} at ${restaurant.data.name}`}
+      breadcrumbs={[
+        { label: 'Experiences', href: '/experiences' },
+        { label: experience.data.name },
+      ]}
+    />
+
+    <section class="section-shell">
+      <div class="site-container grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
+        <div class="reading-width">
+          <p class="eyebrow">The experience</p>
+          <h2 class="mt-4 font-display text-4xl tracking-[-0.035em]">
+            A considered way to gather.
+          </h2>
+          <p class="mt-6 text-lg leading-8 text-muted">
+            {experience.data.longDescription}
+          </p>
+        </div>
+        <aside class="rounded-[1.25rem] border border-line bg-surface p-7">
+          <p class="eyebrow">Hosted by</p>
+          <h2 class="mt-4 font-display text-3xl">{restaurant.data.name}</h2>
+          <p class="mt-2 text-sm font-semibold text-accent">
+            {restaurant.data.city}, {country.data.name}
+          </p>
+          <p class="mt-4 leading-7 text-muted">
+            {restaurant.data.shortDescription}
+          </p>
+          <a class="text-link mt-6" href={`/countries/${country.data.slug}`}>
+            Explore {country.data.name}
+          </a>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-rule section-shell bg-surface">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Packages"
+          title="Select the shape of your occasion."
+          description="Booking is not connected yet. These package details form the local content foundation for a later milestone."
+        />
+        {
+          packages.length > 0 ? (
+            <div class="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3 lg:mt-16">
+              {packages.map((packageEntry) => (
+                <PackageCard packageEntry={packageEntry} />
+              ))}
+            </div>
+          ) : (
+            <div class="empty-state mt-10">
+              <h3 class="font-display text-2xl">No packages available yet</h3>
+              <p class="mt-2 text-muted">
+                Package options for this experience are being prepared.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

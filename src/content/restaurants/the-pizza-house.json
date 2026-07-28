@@ -1,0 +1,9 @@
+{
+  "name": "The Pizza House",
+  "slug": "the-pizza-house",
+  "countrySlug": "nepal",
+  "city": "Kathmandu",
+  "shortDescription": "A welcoming Kathmandu restaurant known for relaxed hospitality, shareable favourites, and tables made for gathering.",
+  "heroImage": "media-nepal",
+  "active": true
+}

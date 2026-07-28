@@ -1,0 +1,11 @@
+{
+  "name": "Harbourlight Dinner for Two",
+  "slug": "harbourlight-dinner-for-two",
+  "restaurantSlug": "harbour-and-pine",
+  "type": "Dinner",
+  "shortDescription": "A refined couple's evening with a coastal menu, candlelit pacing, and a quiet view toward the harbour.",
+  "longDescription": "Harbourlight Dinner for Two is an imagined premium evening at the fictional Harbour & Pine in Auckland. The experience pairs a seasonal coastal menu with thoughtful pacing, an intimate table, and time to enjoy the harbour mood together.",
+  "heroImage": "media-new-zealand",
+  "featured": true,
+  "active": true
+}

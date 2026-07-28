@@ -10,7 +10,22 @@ destinations over time.
 - [Astro](https://astro.build/) with Astro's recommended strict TypeScript
   defaults
 - [Tailwind CSS](https://tailwindcss.com/) 4 through the recommended Vite plugin
+- Astro Content Collections with Zod-validated local JSON entries
 - Static HTML with no client-side framework or backend
+
+## Content architecture
+
+Astro Content Collections are used for countries, restaurants, experiences, and
+packages. They were chosen because collection schemas validate every local
+record at build time, generate TypeScript types automatically, and support
+validated references between each level of the Country → Restaurant →
+Experience → Package relationship.
+
+Each entry lives in `src/content/` as JSON. Adding a destination primarily means
+adding new collection entries; country and detail pages are generated from that
+data. The current `heroImage` values point to local gradient placeholder styles
+and can be replaced with image assets later without changing the routes or data
+relationships.
 
 ## Local installation
 
@@ -48,11 +63,10 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 2 establishes the premium responsive UI foundation: reusable design
-tokens and components, accessible desktop and mobile navigation, polished
-homepage sections, restrained motion, and reduced-motion support. No backend,
-analytics, Supabase integration, AI features, or additional UI frameworks are
-included.
+Milestone 3 establishes the multi-country information architecture with
+validated local content, reusable country selection, and statically generated
+country, experience, and package routes. No backend, CMS, analytics, Supabase
+integration, AI features, or additional UI frameworks are included.
 
 ## Validation
 

@@ -1,0 +1,145 @@
+---
+import ButtonLink from '../../components/ButtonLink.astro';
+import CollectionHero from '../../components/CollectionHero.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  formatBookingStatus,
+  formatPrice,
+  getContentGraph,
+  getCountryForRestaurant,
+  getExperienceForPackage,
+  getRestaurantForExperience,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+  const { packages } = await getContentGraph();
+
+  return packages.map(({ data }) => ({
+    params: { slug: data.slug },
+  }));
+}
+
+const graph = await getContentGraph();
+const packageEntry = graph.packages.find(
+  ({ data }) => data.slug === Astro.params.slug,
+);
+
+if (!packageEntry) {
+  throw new Error(`Package not found: ${Astro.params.slug}`);
+}
+
+const experience = getExperienceForPackage(graph, packageEntry);
+if (!experience) {
+  throw new Error(`Experience not found for package: ${packageEntry.data.slug}`);
+}
+
+const restaurant = getRestaurantForExperience(graph, experience);
+if (!restaurant) {
+  throw new Error(`Restaurant not found for experience: ${experience.data.slug}`);
+}
+
+const country = getCountryForRestaurant(graph, restaurant);
+if (!country) {
+  throw new Error(`Country not found for restaurant: ${restaurant.data.slug}`);
+}
+
+const title = `${packageEntry.data.name} | ExperienceHub`;
+const description = packageEntry.data.shortDescription;
+---
+
+<BaseLayout title={title} description={description}>
+  <SiteHeader />
+  <main>
+    <CollectionHero
+      eyebrow={`${formatBookingStatus(packageEntry.data.bookingStatus)} · ${country.data.name}`}
+      title={packageEntry.data.name}
+      description={packageEntry.data.shortDescription}
+      mediaClass={experience.data.heroImage}
+      imageAlt={`Placeholder artwork for ${packageEntry.data.name}`}
+      breadcrumbs={[
+        { label: 'Experiences', href: '/experiences' },
+        {
+          label: experience.data.name,
+          href: `/experiences/${experience.data.slug}`,
+        },
+        { label: packageEntry.data.name },
+      ]}
+    />
+
+    <section class="section-shell">
+      <div class="site-container grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+        <article class="reading-width">
+          <p class="eyebrow">Package details</p>
+          <h2 class="mt-4 font-display text-4xl tracking-[-0.035em]">
+            What to expect
+          </h2>
+          <p class="mt-6 text-lg leading-8 text-muted">
+            {packageEntry.data.fullDescription}
+          </p>
+
+          <h3 class="mt-10 text-lg font-semibold">Included</h3>
+          <ul class="mt-5 space-y-3" role="list">
+            {
+              packageEntry.data.includedItems.map((item) => (
+                <li class="flex gap-3 text-muted">
+                  <span class="mt-2 size-1.5 shrink-0 rounded-full bg-success" aria-hidden="true" />
+                  <span>{item}</span>
+                </li>
+              ))
+            }
+          </ul>
+
+          {
+            packageEntry.data.optionalNotes && (
+              <div class="mt-10 border-l-2 border-accent pl-5">
+                <h3 class="text-sm font-semibold">A helpful note</h3>
+                <p class="mt-2 leading-7 text-muted">
+                  {packageEntry.data.optionalNotes}
+                </p>
+              </div>
+            )
+          }
+        </article>
+
+        <aside class="h-fit rounded-[1.25rem] border border-line bg-surface p-7 sm:p-8">
+          <p class="eyebrow">At a glance</p>
+          <p class="mt-5 font-display text-4xl">
+            {formatPrice(packageEntry.data.price, packageEntry.data.currency)}
+          </p>
+          <dl class="mt-7 divide-y divide-line border-y border-line">
+            <div class="flex justify-between gap-4 py-4">
+              <dt class="text-muted">Guests</dt>
+              <dd class="font-semibold">{packageEntry.data.numberOfGuests}</dd>
+            </div>
+            <div class="flex justify-between gap-4 py-4">
+              <dt class="text-muted">Duration</dt>
+              <dd class="text-right font-semibold">{packageEntry.data.duration}</dd>
+            </div>
+            <div class="flex justify-between gap-4 py-4">
+              <dt class="text-muted">Restaurant</dt>
+              <dd class="text-right font-semibold">{restaurant.data.name}</dd>
+            </div>
+            <div class="flex justify-between gap-4 py-4">
+              <dt class="text-muted">Status</dt>
+              <dd class="text-right font-semibold">
+                {formatBookingStatus(packageEntry.data.bookingStatus)}
+              </dd>
+            </div>
+          </dl>
+          <ButtonLink
+            class="mt-7 w-full"
+            href={`/experiences/${experience.data.slug}`}
+          >
+            View experience
+          </ButtonLink>
+          <p class="mt-4 text-center text-xs leading-5 text-muted">
+            Booking functionality will be introduced in a later milestone.
+          </p>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>

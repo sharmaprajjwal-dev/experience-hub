@@ -78,6 +78,13 @@ a {
   border-top: 1px solid var(--eh-border);
 }
 
+.empty-state {
+  border: 1px dashed var(--eh-border);
+  border-radius: 1.25rem;
+  background: var(--eh-surface);
+  padding: clamp(2rem, 5vw, 4rem);
+}
+
 .eyebrow {
   color: var(--eh-accent);
   font-size: 0.72rem;

@@ -1,0 +1,43 @@
+---
+import { getContentGraph } from '../lib/content';
+
+interface Props {
+  currentSlug?: string;
+  centred?: boolean;
+}
+
+const { currentSlug, centred = false } = Astro.props;
+const { countries } = await getContentGraph();
+---
+
+<nav
+  class:list={[
+    'flex flex-col gap-3',
+    { 'items-center text-center': centred },
+  ]}
+  aria-label="Choose a country"
+>
+  <p class="text-xs font-bold tracking-[0.16em] text-muted uppercase">
+    Choose a country
+  </p>
+  <ul class="flex flex-wrap gap-2" role="list">
+    {
+      countries.map(({ data }) => (
+        <li>
+          <a
+            class:list={[
+              'inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors',
+              currentSlug === data.slug
+                ? 'border-ink bg-ink text-surface'
+                : 'border-line bg-surface text-ink hover:border-ink',
+            ]}
+            href={`/countries/${data.slug}`}
+            aria-current={currentSlug === data.slug ? 'page' : undefined}
+          >
+            {data.name}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>

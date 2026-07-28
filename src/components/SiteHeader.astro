@@ -3,11 +3,18 @@ import ButtonLink from './ButtonLink.astro';
 
 const navigation = [
   { label: 'Home', href: '/' },
-  { label: 'Experiences', href: '/#experiences' },
-  { label: 'Countries', href: '/#countries' },
+  { label: 'Experiences', href: '/experiences' },
+  { label: 'Countries', href: '/countries' },
   { label: 'Journal', href: '/#journal' },
   { label: 'About', href: '/#about' },
 ];
+const pathname = Astro.url.pathname;
+
+const isCurrent = (href: string) => {
+  if (href === '/') return pathname === '/';
+  if (href.includes('#')) return false;
+  return pathname === href || pathname.startsWith(`${href}/`);
+};
 ---
 
 <header
@@ -33,12 +40,12 @@ const navigation = [
       <div class="hidden items-center gap-7 lg:flex">
         <ul class="flex items-center gap-6" role="list">
           {
-            navigation.map((item, index) => (
+            navigation.map((item) => (
               <li>
                 <a
                   class="text-sm font-medium text-muted transition-colors hover:text-ink"
                   href={item.href}
-                  aria-current={index === 0 ? 'page' : undefined}
+                  aria-current={isCurrent(item.href) ? 'page' : undefined}
                 >
                   {item.label}
                 </a>
@@ -46,7 +53,7 @@ const navigation = [
             ))
           }
         </ul>
-        <ButtonLink href="/#experiences">Explore</ButtonLink>
+        <ButtonLink href="/experiences">Explore</ButtonLink>
       </div>
 
       <button
@@ -79,12 +86,12 @@ const navigation = [
     >
       <ul class="flex flex-col" role="list">
         {
-          navigation.map((item, index) => (
+          navigation.map((item) => (
             <li>
               <a
                 class="block border-b border-line/70 py-3 text-base font-medium text-ink"
                 href={item.href}
-                aria-current={index === 0 ? 'page' : undefined}
+                aria-current={isCurrent(item.href) ? 'page' : undefined}
               >
                 {item.label}
               </a>
@@ -92,7 +99,7 @@ const navigation = [
           ))
         }
       </ul>
-      <ButtonLink class="mt-5 w-full" href="/#experiences">
+      <ButtonLink class="mt-5 w-full" href="/experiences">
         Explore experiences
       </ButtonLink>
     </div>

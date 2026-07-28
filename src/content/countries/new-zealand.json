@@ -1,0 +1,9 @@
+{
+  "name": "New Zealand",
+  "slug": "new-zealand",
+  "countryCode": "NZ",
+  "shortDescription": "Calm coastal settings, thoughtful local produce, and unhurried experiences made for meaningful occasions.",
+  "heroImage": "media-new-zealand",
+  "currencyCode": "NZD",
+  "active": true
+}

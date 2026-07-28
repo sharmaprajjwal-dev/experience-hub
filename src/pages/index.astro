@@ -1,15 +1,40 @@
 ---
 import ButtonLink from '../components/ButtonLink.astro';
 import CountryCard from '../components/CountryCard.astro';
+import CountrySelector from '../components/CountrySelector.astro';
 import ExperienceCard from '../components/ExperienceCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import {
+  getContentGraph,
+  getCountryForRestaurant,
+  getExperiencesForRestaurants,
+  getRestaurantForExperience,
+  getRestaurantsForCountry,
+} from '../lib/content';
 
 const title = 'ExperienceHub | Remarkable dining, rooted in place';
 const description =
   'Discover curated restaurant experiences and thoughtful dining packages in Nepal and New Zealand.';
+const graph = await getContentGraph();
+const featuredExperiences = graph.experiences.filter(
+  ({ data }) => data.featured,
+);
+const leadCountry = graph.countries[0];
+const leadRestaurants = leadCountry
+  ? getRestaurantsForCountry(graph, leadCountry.data.slug)
+  : [];
+const leadExperiences = getExperiencesForRestaurants(graph, leadRestaurants);
+const heroExperience =
+  leadExperiences.find(({ data }) => data.featured) ?? featuredExperiences[0];
+const heroRestaurant = heroExperience
+  ? getRestaurantForExperience(graph, heroExperience)
+  : undefined;
+const heroCountry = heroRestaurant
+  ? getCountryForRestaurant(graph, heroRestaurant)
+  : undefined;
 ---
 
 <BaseLayout title={title} description={description}>
@@ -21,7 +46,9 @@ const description =
         class="site-container grid min-h-[calc(100svh-5rem)] items-center gap-14 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:py-20"
       >
         <div class="hero-enter max-w-3xl">
-          <p class="eyebrow">Nepal · New Zealand</p>
+          <p class="eyebrow">
+            {graph.countries.map(({ data }) => data.name).join(' · ')}
+          </p>
           <h1 class="display-title mt-6 text-[clamp(3.8rem,8vw,7.5rem)] text-balance">
             Gather around something remarkable.
           </h1>
@@ -38,18 +65,22 @@ const description =
         </div>
 
         <div
-          class="media-frame media-nepal hero-enter hero-enter--delay aspect-[4/5] rounded-[1.5rem] sm:aspect-[5/4] lg:aspect-[4/5]"
+          class:list={[
+            'media-frame hero-enter hero-enter--delay aspect-[4/5] rounded-[1.5rem] sm:aspect-[5/4] lg:aspect-[4/5]',
+            heroExperience?.data.heroImage ?? 'media-journal',
+          ]}
           role="img"
-          aria-label="Warm abstract placeholder artwork evoking a shared brunch table in Nepal"
+          aria-label={`Atmospheric placeholder artwork for ${heroExperience?.data.name ?? 'a featured dining experience'}`}
         >
           <div
             class="absolute right-[12%] bottom-[11%] z-10 max-w-64 rounded-xl border border-white/30 bg-black/20 p-5 text-white backdrop-blur-md"
           >
             <p class="text-[0.65rem] font-bold tracking-[0.18em] uppercase">
-              Featured in Kathmandu
+              Featured in {heroRestaurant?.data.city ?? 'the collection'}
             </p>
             <p class="mt-2 font-display text-2xl leading-tight">
-              Signature Brunch at The Pizza House
+              {heroExperience?.data.name ?? 'A remarkable dining experience'}
+              {heroRestaurant && ` at ${heroRestaurant.data.name}`}
             </p>
           </div>
         </div>
@@ -60,24 +91,31 @@ const description =
       <div class="site-container">
         <SectionHeading
           eyebrow="The collection"
-          title="Two countries. Distinct ways to gather."
-          description="Our first collection moves from Kathmandu's generous brunch tables to an intimate harbour-side evening in Auckland."
+          title="Distinct places. Distinct ways to gather."
+          description="Explore every active ExperienceHub destination through local restaurants, curated experiences, and thoughtful packages."
         />
+        <div class="mt-9">
+          <CountrySelector />
+        </div>
         <div class="mt-12 grid gap-6 md:grid-cols-2 lg:mt-16">
-          <CountryCard
-            country="Nepal"
-            location="Kathmandu"
-            description="Warm hospitality, spirited tables, and a signature brunch designed for families, couples, and friends."
-            mediaClass="media-nepal"
-            href="#experiences"
-          />
-          <CountryCard
-            country="New Zealand"
-            location="Auckland"
-            description="A calm, coastal dining mood shaped around local produce and an unhurried evening for two."
-            mediaClass="media-new-zealand"
-            href="#experiences"
-          />
+          {
+            graph.countries.map(({ data }) => {
+              const restaurants = getRestaurantsForCountry(graph, data.slug);
+              const location =
+                restaurants.map(({ data }) => data.city).join(' · ') ||
+                'Collection in development';
+
+              return (
+                <CountryCard
+                  country={data.name}
+                  location={location}
+                  description={data.shortDescription}
+                  mediaClass={data.heroImage}
+                  href={`/countries/${data.slug}`}
+                />
+              );
+            })
+          }
         </div>
       </div>
     </section>
@@ -90,24 +128,29 @@ const description =
           description="Each experience pairs a distinctive setting with packages shaped around who you are gathering with."
         />
         <div class="mt-12 grid gap-6 lg:grid-cols-2 lg:mt-16">
-          <ExperienceCard
-            eyebrow="Kathmandu · Nepal"
-            title="Signature Brunch Experience"
-            restaurant="The Pizza House"
-            description="A lively late-morning table with shareable favourites, thoughtful details, and room to linger."
-            packageName="Family · Couple · Friends packages"
-            mediaClass="media-nepal"
-            href="#explore"
-          />
-          <ExperienceCard
-            eyebrow="Auckland · New Zealand"
-            title="Harbourlight Dinner for Two"
-            restaurant="Harbour & Pine — a fictional dining room"
-            description="A refined couple's evening with a coastal menu, candlelit pacing, and a quiet view toward the harbour."
-            packageName="Couple Dinner Package"
-            mediaClass="media-new-zealand"
-            href="#explore"
-          />
+          {
+            featuredExperiences.map((experience) => {
+              const restaurant = getRestaurantForExperience(graph, experience);
+              const country = restaurant
+                ? getCountryForRestaurant(graph, restaurant)
+                : undefined;
+              const packages = graph.packages.filter(
+                ({ data }) => data.experienceSlug.id === experience.data.slug,
+              );
+
+              return (
+                <ExperienceCard
+                  eyebrow={`${restaurant?.data.city ?? 'Destination'} · ${country?.data.name ?? 'ExperienceHub'}`}
+                  title={experience.data.name}
+                  restaurant={restaurant?.data.name ?? 'Restaurant to be announced'}
+                  description={experience.data.shortDescription}
+                  packageName={`${packages.length} ${packages.length === 1 ? 'package' : 'packages'} available`}
+                  mediaClass={experience.data.heroImage}
+                  href={`/experiences/${experience.data.slug}`}
+                />
+              );
+            })
+          }
         </div>
       </div>
     </section>
@@ -226,7 +269,7 @@ const description =
             Zealand.
           </p>
         </div>
-        <ButtonLink variant="light" href="#countries">
+        <ButtonLink variant="light" href="/countries">
           Explore countries
         </ButtonLink>
       </div>

@@ -1,0 +1,20 @@
+{
+  "name": "Family Brunch Package",
+  "slug": "family-brunch-package",
+  "experienceSlug": "signature-brunch-experience",
+  "shortDescription": "A generous shared brunch arranged for a relaxed family table.",
+  "fullDescription": "Designed for families who want an easy celebration without rushing, this package brings together shareable brunch favourites, drinks, and a sweet finish for the table.",
+  "price": 6500,
+  "currency": "NPR",
+  "numberOfGuests": 4,
+  "duration": "2 hours 30 minutes",
+  "includedItems": [
+    "Shared selection of signature brunch dishes",
+    "Hot or cold drink for each guest",
+    "Dessert selection for the table"
+  ],
+  "optionalNotes": "Additional guests can be discussed with the restaurant when booking becomes available.",
+  "featured": true,
+  "active": true,
+  "bookingStatus": "coming-soon"
+}

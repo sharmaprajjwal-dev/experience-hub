@@ -1,0 +1,71 @@
+---
+import CountryCard from '../../components/CountryCard.astro';
+import CountrySelector from '../../components/CountrySelector.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  getContentGraph,
+  getRestaurantsForCountry,
+} from '../../lib/content';
+
+const graph = await getContentGraph();
+const title = 'Countries | ExperienceHub';
+const description =
+  'Explore curated dining experiences in Nepal and New Zealand.';
+---
+
+<BaseLayout title={title} description={description}>
+  <SiteHeader />
+  <main>
+    <section class="section-shell bg-surface">
+      <div class="site-container">
+        <SectionHeading
+          eyebrow="Countries"
+          title="Begin with a place."
+          description="Explore each destination through its restaurants, experiences, and thoughtfully assembled packages."
+          level="h1"
+        />
+        <div class="mt-9">
+          <CountrySelector />
+        </div>
+      </div>
+    </section>
+
+    <section class="section-rule section-shell">
+      <div class="site-container">
+        {
+          graph.countries.length > 0 ? (
+            <div class="grid gap-6 md:grid-cols-2">
+              {graph.countries.map(({ data }) => {
+                const restaurants = getRestaurantsForCountry(graph, data.slug);
+                const location =
+                  restaurants.map(({ data }) => data.city).join(' · ') ||
+                  'Collection in development';
+
+                return (
+                  <CountryCard
+                    country={data.name}
+                    location={location}
+                    description={data.shortDescription}
+                    mediaClass={data.heroImage}
+                    href={`/countries/${data.slug}`}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div class="empty-state">
+              <h2 class="font-display text-3xl">No countries available yet</h2>
+              <p class="mt-3 text-muted">
+                New destinations will appear here as the collection grows.
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
+</BaseLayout>
