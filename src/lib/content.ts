@@ -2,6 +2,11 @@ import {
   getCollection,
   type CollectionEntry,
 } from 'astro:content';
+import { getSupabaseContentGraph } from './supabase-catalogue';
+import {
+  getSupabaseClient,
+  getSupabaseConfigurationStatus,
+} from './supabase';
 
 export type CountryEntry = CollectionEntry<'countries'>;
 export type RestaurantEntry = CollectionEntry<'restaurants'>;
@@ -18,7 +23,7 @@ export interface ContentGraph {
 const byName = <T extends { data: { name: string } }>(a: T, b: T) =>
   a.data.name.localeCompare(b.data.name);
 
-export async function getContentGraph(): Promise<ContentGraph> {
+async function getLocalContentGraph(): Promise<ContentGraph> {
   const [countries, restaurants, experiences, packages] = await Promise.all([
     getCollection('countries', ({ data }) => data.active),
     getCollection('restaurants', ({ data }) => data.active),
@@ -36,6 +41,68 @@ export async function getContentGraph(): Promise<ContentGraph> {
   validateContentGraph(graph);
 
   return graph;
+}
+
+let contentGraphPromise: Promise<ContentGraph> | undefined;
+
+export function getContentGraph(): Promise<ContentGraph> {
+  contentGraphPromise ??= loadContentGraph();
+  return contentGraphPromise;
+}
+
+async function loadContentGraph(): Promise<ContentGraph> {
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    if (import.meta.env.DEV) {
+      const status = getSupabaseConfigurationStatus();
+      const reason =
+        status === 'missing'
+          ? 'is not configured'
+          : status === 'configured'
+            ? 'client could not be initialized'
+            : `configuration is ${status}`;
+
+      console.info(
+        `[ExperienceHub] Supabase ${reason}; using the local demo catalogue.`,
+      );
+    }
+
+    return getLocalContentGraph();
+  }
+
+  try {
+    const graph = await getSupabaseContentGraph(supabase);
+
+    if (
+      graph.countries.length === 0 ||
+      graph.restaurants.length === 0 ||
+      graph.experiences.length === 0 ||
+      graph.packages.length === 0
+    ) {
+      throw new Error('The active Supabase catalogue is incomplete.');
+    }
+
+    sortContentGraph(graph);
+    validateContentGraph(graph);
+
+    return graph;
+  } catch {
+    if (import.meta.env.DEV) {
+      console.warn(
+        '[ExperienceHub] Supabase catalogue data is unavailable or incomplete; using the local demo catalogue.',
+      );
+    }
+
+    return getLocalContentGraph();
+  }
+}
+
+function sortContentGraph(graph: ContentGraph) {
+  graph.countries.sort(byName);
+  graph.restaurants.sort(byName);
+  graph.experiences.sort(byName);
+  graph.packages.sort(byName);
 }
 
 function validateContentGraph(graph: ContentGraph) {
