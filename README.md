@@ -17,8 +17,8 @@ destinations over time.
   sessions
 - Supabase Storage with authenticated administrator uploads and public catalogue
   image delivery
-- Prerendered public pages with on-demand server rendering limited to private
-  administration routes
+- Server-side OpenRouter recommendations with structured response validation
+- On-demand public catalogue and private administration routes
 
 ## Content architecture
 
@@ -46,17 +46,17 @@ concept prices. They must not be treated as confirmed restaurant pricing.
 
 Supabase is optional during development. When both public environment variables
 are configured, the shared catalogue data layer reads active countries,
-restaurants, experiences, and packages from Supabase during development and
-static builds. Missing, incomplete, placeholder, empty, slow, or unavailable
-Supabase configuration falls back to the existing validated local demo content
-without taking down the site.
+restaurants, experiences, and packages from Supabase for each catalogue
+request. Missing, incomplete, placeholder, slow, or unavailable Supabase
+configuration falls back to the existing validated local demo content without
+taking down the site.
 
 To prepare a hosted project:
 
 1. Create a project from the [Supabase dashboard](https://supabase.com/dashboard).
 2. Open the project's **SQL Editor** and run the files in
    `supabase/migrations/` in filename order.
-3. Run `supabase/seed.sql` in the SQL Editor after both migrations. The seed is
+3. Run `supabase/seed.sql` in the SQL Editor after all migrations. The seed is
    demonstration content; all prices are marked as placeholders and the New
    Zealand restaurant and experience are explicitly fictional.
 4. Open **Project Settings → Data API** to find the project URL.
@@ -255,6 +255,81 @@ content remains a development fallback only when Supabase is missing or
 unavailable; a successfully connected but empty database displays normal empty
 states instead of substituting demo records.
 
+## AI package recommendation assistant
+
+The **Help me choose** panel sends a short, structured preference request to
+`/api/recommendations`. Browser JavaScript never contacts OpenRouter directly.
+The Astro server loads active packages from the same catalogue layer, supplies
+that bounded context to OpenRouter, validates the returned JSON and package
+slugs, enriches the cards from trusted catalogue data, and returns only the
+safe display response.
+
+To configure it locally:
+
+1. Create an account at [OpenRouter](https://openrouter.ai/).
+2. Create an application API key from
+   [OpenRouter API Keys](https://openrouter.ai/settings/keys). Treat the
+   plaintext key as a secret.
+3. Choose a currently available low-cost model from the
+   [OpenRouter model catalogue](https://openrouter.ai/models). Confirm that the
+   model supports structured outputs.
+4. Add these server-side values to the ignored local `.env`:
+
+```dotenv
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=
+SITE_URL=
+SITE_NAME=
+```
+
+No model identifier is hard-coded, because model availability and pricing can
+change. Fill these values only in the ignored `.env`; change
+`OPENROUTER_MODEL` and restart the server to switch models.
+`SITE_URL` and `SITE_NAME` are optional attribution values sent through
+OpenRouter's documented request headers; they are not secrets.
+
+For a Cloudflare deployment, add `OPENROUTER_API_KEY` as an encrypted **Secret**
+under **Workers & Pages → your Worker → Settings → Variables and Secrets**.
+Add the model, site URL, and site name there as normal variables or secrets
+according to the deployment policy. A Wrangler-managed Worker can instead use:
+
+```sh
+npx wrangler secret put OPENROUTER_API_KEY
+```
+
+The endpoint reads Node runtime variables, Astro build-time server variables,
+or Cloudflare runtime bindings. Keep `OPENROUTER_API_KEY` server-only and never
+give it a `PUBLIC_` prefix. The browser bundle has no reason to receive it.
+
+If a key is leaked, create a replacement, update the deployment secret, verify
+the new key, and revoke the old key immediately. OpenRouter supports usage
+limits on application keys and organization guardrails; set an appropriately
+small spending limit and monitor usage in the OpenRouter dashboard.
+
+Grounding and safety controls are deliberately narrow:
+
+- Only currently active packages and their approved country, restaurant,
+  experience, price status, guest, duration, inclusion, note, and booking
+  fields are supplied.
+- Catalogue and preference objects are labelled as untrusted data, never
+  instructions.
+- The browser cannot provide a system prompt, model name, endpoint, or API key.
+- OpenRouter is asked for strict JSON containing existing package slugs,
+  reasons, considerations, and an optional follow-up question.
+- The server rejects unknown slugs, duplicate recommendations, excessive text,
+  sensitive-configuration topics, and malformed responses.
+- Invalid model JSON produces a deterministic catalogue-only fallback; provider
+  and timeout failures produce friendly errors.
+- Requests are limited to 2,500 characters and five valid requests per client
+  per ten-minute server-instance window. This in-memory limiter is a basic abuse
+  control, not a distributed production quota.
+- Conversations are not stored, and the interface asks users not to submit
+  personal or payment-card details.
+
+Without both `OPENROUTER_API_KEY` and `OPENROUTER_MODEL`, the site still builds
+and the panel displays a non-technical unavailable state while the normal
+catalogue remains usable.
+
 ## Local installation
 
 Requires Node.js 22.12 or newer.
@@ -291,11 +366,11 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 9 adds a focused Supabase catalogue dashboard for viewing, creating,
-editing, activating, featuring, imaging, and safely deleting countries,
-restaurants, experiences, and packages. Public catalogue routes now read fresh
-active data at request time. Public signup, service-role access, checkout,
-Stripe, analytics, and runtime AI features remain out of scope.
+Milestone 10 adds a server-only OpenRouter package recommendation assistant,
+strict catalogue grounding, validated structured responses, safe fallback
+recommendations, input limits, timeout handling, and basic rate limiting.
+Public signup, service-role access, checkout, Stripe, analytics, and
+conversation storage remain out of scope.
 
 Canonical metadata currently uses the reserved placeholder host
 `https://experiencehub.example`. Replace the `site` value in
@@ -303,9 +378,9 @@ Canonical metadata currently uses the reserved placeholder host
 
 ## Validation
 
-Each milestone is validated with `npm run build`. Milestone 9 additionally
-checks protected dashboard routes, server-side admin mutations, slug and field
-validation, relationship-aware deletion, image replacement, request-time public
-catalogue reads, inactive-record filtering, RLS policy separation, and the
-absence of embedded credentials. Live add, edit, deactivate, upload, and delete
-tests require real Supabase credentials and a promoted administrator.
+Each milestone is validated with `npm run build`. Milestone 10 additionally
+checks browser-bundle secret exclusion, Git-diff credential scans, invalid and
+oversized input rejection, same-origin enforcement, method handling, no-key
+availability, catalogue-only response validation, and rate-limit behavior. Live
+recommendations are tested only when a valid OpenRouter key and configured model
+are available.

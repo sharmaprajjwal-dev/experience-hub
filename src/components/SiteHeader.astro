@@ -4,6 +4,7 @@ import ButtonLink from './ButtonLink.astro';
 const navigation = [
   { label: 'Home', href: '/' },
   { label: 'Experiences', href: '/experiences' },
+  { label: 'Help me choose', href: '/experiences#assistant' },
   { label: 'Countries', href: '/countries' },
   { label: 'Journal', href: '/journal' },
   { label: 'About', href: '/#about' },
@@ -53,7 +54,7 @@ const isCurrent = (href: string) => {
             ))
           }
         </ul>
-        <ButtonLink href="/experiences">Explore</ButtonLink>
+        <ButtonLink href="/experiences#assistant">Explore</ButtonLink>
       </div>
 
       <button
@@ -99,8 +100,8 @@ const isCurrent = (href: string) => {
           ))
         }
       </ul>
-      <ButtonLink class="mt-5 w-full" href="/experiences">
-        Explore experiences
+      <ButtonLink class="mt-5 w-full" href="/experiences#assistant">
+        Help me choose
       </ButtonLink>
     </div>
   </nav>

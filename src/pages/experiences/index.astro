@@ -1,5 +1,6 @@
 ---
 import ExperienceCard from '../../components/ExperienceCard.astro';
+import RecommendationAssistant from '../../components/RecommendationAssistant.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
@@ -10,6 +11,7 @@ import {
   getCountryForRestaurant,
   getRestaurantForExperience,
 } from '../../lib/content';
+import { isRecommendationAssistantConfigured } from '../../lib/recommendations.server';
 
 export const prerender = false;
 
@@ -44,6 +46,9 @@ const featuredItems = catalogueItems.filter(
 const experienceTypes = [
   ...new Set(catalogueItems.map(({ experience }) => experience.data.type)),
 ].sort();
+const assistantConfigured = isRecommendationAssistantConfigured(
+  Astro.locals.runtime?.env,
+);
 ---
 
 <BaseLayout title={title} description={description}>
@@ -59,6 +64,14 @@ const experienceTypes = [
         />
       </div>
     </section>
+
+    <RecommendationAssistant
+      configured={assistantConfigured}
+      countries={graph.countries.map(({ data }) => ({
+        name: data.name,
+        slug: data.slug,
+      }))}
+    />
 
     {
       featuredItems.length > 0 && (
@@ -86,7 +99,11 @@ const experienceTypes = [
       )
     }
 
-    <section class="section-rule section-shell bg-surface" data-catalogue>
+    <section
+      id="catalogue-results"
+      class="section-rule section-shell scroll-mt-24 bg-surface"
+      data-catalogue
+    >
       <div class="site-container">
         <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading

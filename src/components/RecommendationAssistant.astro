@@ -1,0 +1,424 @@
+---
+interface Props {
+  countries: Array<{ name: string; slug: string }>;
+  configured: boolean;
+}
+
+const { countries, configured } = Astro.props;
+---
+
+<section
+  id="assistant"
+  class="section-rule section-shell scroll-mt-24 bg-ink text-surface"
+  aria-labelledby="assistant-title"
+>
+  <div class="site-container grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
+    <div>
+      <p class="text-xs font-bold tracking-[0.18em] text-white/60 uppercase">
+        Automated package guide
+      </p>
+      <h2
+        id="assistant-title"
+        class="mt-4 font-display text-5xl leading-tight tracking-[-0.04em]"
+      >
+        Help me choose
+      </h2>
+      <p class="mt-5 max-w-xl leading-7 text-white/70">
+        Share a few practical preferences. The assistant can recommend only
+        active packages already published by ExperienceHub.
+      </p>
+      <p class="mt-5 text-xs leading-5 text-white/55">
+        Recommendations are automated and may not capture every need. Review
+        package details before booking. Do not enter names, contact details, or
+        payment-card information.
+      </p>
+    </div>
+
+    {
+      configured ? (
+        <div class="rounded-[1.5rem] border border-white/15 bg-white/[0.07] p-6 sm:p-8">
+          <form id="recommendation-form" class="grid gap-5">
+            <div class="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label class="block text-sm font-semibold" for="assistant-country">
+                  Country
+                </label>
+                <select
+                  class="mt-2 min-h-12 w-full rounded-xl border border-white/20 bg-ink px-4 text-surface"
+                  id="assistant-country"
+                  name="country"
+                >
+                  <option value="">Any active destination</option>
+                  {countries.map((country) => (
+                    <option value={country.name}>{country.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="assistant-guests">
+                  Number of guests
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-white/20 bg-ink px-4 text-surface"
+                  id="assistant-guests"
+                  name="guests"
+                  type="number"
+                  min="1"
+                  max="50"
+                  step="1"
+                  inputmode="numeric"
+                  placeholder="2"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="assistant-occasion">
+                  Occasion
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-white/20 bg-ink px-4 text-surface placeholder:text-white/35"
+                  id="assistant-occasion"
+                  name="occasion"
+                  maxlength="120"
+                  placeholder="A relaxed family brunch"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="assistant-time">
+                  Preferred time
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-white/20 bg-ink px-4 text-surface placeholder:text-white/35"
+                  id="assistant-time"
+                  name="preferredTime"
+                  maxlength="80"
+                  placeholder="Weekend lunchtime"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="assistant-budget">
+                  Approximate budget
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-white/20 bg-ink px-4 text-surface placeholder:text-white/35"
+                  id="assistant-budget"
+                  name="budget"
+                  maxlength="100"
+                  placeholder="Around NPR 5,000"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="assistant-atmosphere">
+                  Desired atmosphere
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-white/20 bg-ink px-4 text-surface placeholder:text-white/35"
+                  id="assistant-atmosphere"
+                  name="atmosphere"
+                  maxlength="160"
+                  placeholder="Quiet and intimate"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold" for="assistant-dietary">
+                Dietary considerations
+              </label>
+              <input
+                class="mt-2 min-h-12 w-full rounded-xl border border-white/20 bg-ink px-4 text-surface placeholder:text-white/35"
+                id="assistant-dietary"
+                name="dietaryConsiderations"
+                maxlength="240"
+                placeholder="Vegetarian options preferred"
+                aria-describedby="assistant-dietary-help"
+              />
+              <p id="assistant-dietary-help" class="mt-2 text-xs text-white/50">
+                The assistant cannot confirm allergy safety or substitutions.
+                Check directly before booking.
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold" for="assistant-details">
+                Anything else?
+              </label>
+              <textarea
+                class="mt-2 min-h-24 w-full rounded-xl border border-white/20 bg-ink p-4 text-surface placeholder:text-white/35"
+                id="assistant-details"
+                name="details"
+                maxlength="400"
+                placeholder="We would like something social but not too formal."
+              ></textarea>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-4">
+              <button
+                id="recommendation-submit"
+                class="button button--light disabled:cursor-not-allowed disabled:opacity-50"
+                type="submit"
+              >
+                Find matching packages
+              </button>
+              <p
+                id="recommendation-status"
+                class="text-sm text-white/65"
+                role="status"
+                aria-live="polite"
+              >
+                No conversation is stored.
+              </p>
+            </div>
+          </form>
+
+          <div
+            id="recommendation-results"
+            class="mt-8 hidden border-t border-white/15 pt-8"
+            aria-live="polite"
+          >
+            <div class="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p class="text-xs font-bold tracking-[0.16em] text-white/55 uppercase">
+                  Suggested packages
+                </p>
+                <h3 class="mt-2 font-display text-3xl">
+                  A place to begin
+                </h3>
+              </div>
+              <button
+                class="text-link text-white"
+                id="recommendation-reset"
+                type="button"
+              >
+                Start again
+              </button>
+            </div>
+            <div id="recommendation-cards" class="mt-6 grid gap-4"></div>
+            <p
+              id="recommendation-follow-up"
+              class="mt-5 hidden rounded-xl border border-white/15 p-4 text-sm leading-6 text-white/75"
+            ></p>
+            <p
+              id="recommendation-mode-note"
+              class="mt-4 hidden text-xs leading-5 text-white/50"
+            >
+              A catalogue-only fallback was used because the automated response
+              could not be safely validated.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div class="rounded-[1.5rem] border border-white/15 bg-white/[0.07] p-7 sm:p-9">
+          <p class="text-xs font-bold tracking-[0.16em] text-white/55 uppercase">
+            Unavailable in this environment
+          </p>
+          <h3 class="mt-4 font-display text-3xl">Browse without the assistant</h3>
+          <p class="mt-4 max-w-xl leading-7 text-white/70">
+            Automated recommendations have not been configured here. All active
+            experiences and packages remain available in the catalogue below.
+          </p>
+          <a class="button button--light mt-7" href="#catalogue-results">
+            Browse experiences
+          </a>
+        </div>
+      )
+    }
+  </div>
+</section>
+
+{
+  configured && (
+    <script>
+      const form =
+        document.querySelector<HTMLFormElement>('#recommendation-form');
+      const submit = document.querySelector<HTMLButtonElement>(
+        '#recommendation-submit',
+      );
+      const status = document.querySelector<HTMLElement>(
+        '#recommendation-status',
+      );
+      const results = document.querySelector<HTMLElement>(
+        '#recommendation-results',
+      );
+      const cards =
+        document.querySelector<HTMLElement>('#recommendation-cards');
+      const followUp = document.querySelector<HTMLElement>(
+        '#recommendation-follow-up',
+      );
+      const modeNote = document.querySelector<HTMLElement>(
+        '#recommendation-mode-note',
+      );
+      const reset = document.querySelector<HTMLButtonElement>(
+        '#recommendation-reset',
+      );
+
+      function setStatus(message: string, isError = false) {
+        if (!status) return;
+        status.textContent = message;
+        status.classList.toggle('text-red-200', isError);
+        status.classList.toggle('text-white/65', !isError);
+      }
+
+      function addTextElement(
+        parent: HTMLElement,
+        tag: 'p' | 'h4' | 'span' | 'li',
+        text: string,
+        className?: string,
+      ) {
+        const element = document.createElement(tag);
+        element.textContent = text;
+        if (className) element.className = className;
+        parent.append(element);
+        return element;
+      }
+
+      function renderRecommendations(payload: any) {
+        if (!cards || !results || !Array.isArray(payload.recommendations)) {
+          throw new Error('The recommendation response was not valid.');
+        }
+        cards.replaceChildren();
+
+        if (payload.recommendations.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'rounded-xl border border-white/15 p-5';
+          addTextElement(
+            empty,
+            'h4',
+            'No close match found',
+            'font-display text-2xl',
+          );
+          addTextElement(
+            empty,
+            'p',
+            typeof payload.noMatchReason === 'string'
+              ? payload.noMatchReason
+              : 'Try broader preferences or browse the active catalogue.',
+            'mt-2 text-sm leading-6 text-white/70',
+          );
+          cards.append(empty);
+        } else {
+          payload.recommendations.forEach((recommendation: any) => {
+            const card = document.createElement('article');
+            card.className =
+              'rounded-xl border border-white/15 bg-black/10 p-5 sm:p-6';
+            addTextElement(
+              card,
+              'p',
+              `${recommendation.priceLabel} · ${recommendation.duration}`,
+              'text-xs font-bold tracking-[0.12em] text-white/55 uppercase',
+            );
+            addTextElement(
+              card,
+              'h4',
+              recommendation.name,
+              'mt-3 font-display text-3xl',
+            );
+            addTextElement(
+              card,
+              'p',
+              recommendation.shortDescription,
+              'mt-3 text-sm leading-6 text-white/70',
+            );
+            addTextElement(
+              card,
+              'p',
+              recommendation.reason,
+              'mt-4 text-sm font-semibold leading-6 text-white',
+            );
+
+            if (
+              Array.isArray(recommendation.considerations) &&
+              recommendation.considerations.length > 0
+            ) {
+              const list = document.createElement('ul');
+              list.className = 'mt-4 grid gap-2 text-xs leading-5 text-white/60';
+              recommendation.considerations.forEach(
+                (consideration: string) => {
+                  addTextElement(list, 'li', `• ${consideration}`);
+                },
+              );
+              card.append(list);
+            }
+
+            const link = document.createElement('a');
+            link.className = 'button button--light mt-5';
+            link.href = recommendation.href;
+            link.textContent = 'Review package';
+            card.append(link);
+            cards.append(card);
+          });
+        }
+
+        if (followUp) {
+          const question =
+            typeof payload.followUpQuestion === 'string'
+              ? payload.followUpQuestion
+              : '';
+          followUp.textContent = question;
+          followUp.classList.toggle('hidden', !question);
+        }
+        modeNote?.classList.toggle(
+          'hidden',
+          payload.mode !== 'safe-fallback',
+        );
+        results.classList.remove('hidden');
+        results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!submit) return;
+
+        const formData = new FormData(form);
+        const payload: Record<string, string | number> = {};
+        formData.forEach((value, key) => {
+          if (typeof value !== 'string' || value.trim() === '') return;
+          payload[key] =
+            key === 'guests' ? Number(value) : value.trim();
+        });
+
+        submit.disabled = true;
+        submit.textContent = 'Considering options…';
+        setStatus('Reviewing active packages…');
+        results?.classList.add('hidden');
+
+        try {
+          const response = await fetch('/api/recommendations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const responsePayload = await response.json();
+          if (!response.ok) {
+            throw new Error(
+              responsePayload.error ||
+                'Recommendations are unavailable right now.',
+            );
+          }
+          renderRecommendations(responsePayload);
+          setStatus('Recommendations ready.');
+        } catch (error) {
+          setStatus(
+            error instanceof Error
+              ? error.message
+              : 'Recommendations are unavailable right now.',
+            true,
+          );
+        } finally {
+          submit.disabled = false;
+          submit.textContent = 'Find matching packages';
+        }
+      });
+
+      reset?.addEventListener('click', () => {
+        form?.reset();
+        results?.classList.add('hidden');
+        cards?.replaceChildren();
+        setStatus('No conversation is stored.');
+        document.querySelector('#assistant-title')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    </script>
+  )
+}
