@@ -1,17 +1,140 @@
-<header class="border-b border-stone-200 bg-stone-50">
-  <nav
-    class="mx-auto flex max-w-6xl items-center justify-between px-6 py-5"
-    aria-label="Primary navigation"
-  >
-    <a class="font-semibold tracking-tight" href="/">ExperienceHub</a>
-    <div class="flex items-center gap-6 text-sm text-stone-600">
-      <a class="transition-colors hover:text-stone-950" href="/">Home</a>
+---
+import ButtonLink from './ButtonLink.astro';
+
+const navigation = [
+  { label: 'Home', href: '/' },
+  { label: 'Experiences', href: '/#experiences' },
+  { label: 'Countries', href: '/#countries' },
+  { label: 'Journal', href: '/#journal' },
+  { label: 'About', href: '/#about' },
+];
+---
+
+<header
+  class="sticky top-0 z-50 border-b border-line/80 bg-background/92 backdrop-blur-md"
+  data-site-header
+>
+  <nav class="site-container" aria-label="Primary navigation">
+    <div class="flex min-h-20 items-center justify-between gap-6">
       <a
-        class="transition-colors hover:text-stone-950"
-        href="/#experiences"
+        class="flex items-center gap-3 font-display text-xl tracking-[-0.03em]"
+        href="/"
+        aria-label="ExperienceHub home"
       >
-        Experiences
+        <span
+          class="grid size-9 place-items-center rounded-full bg-ink font-sans text-[0.68rem] font-bold tracking-[0.16em] text-surface"
+          aria-hidden="true"
+        >
+          EH
+        </span>
+        <span>ExperienceHub</span>
       </a>
+
+      <div class="hidden items-center gap-7 lg:flex">
+        <ul class="flex items-center gap-6" role="list">
+          {
+            navigation.map((item, index) => (
+              <li>
+                <a
+                  class="text-sm font-medium text-muted transition-colors hover:text-ink"
+                  href={item.href}
+                  aria-current={index === 0 ? 'page' : undefined}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+        <ButtonLink href="/#experiences">Explore</ButtonLink>
+      </div>
+
+      <button
+        class="grid size-11 place-items-center rounded-full border border-line bg-surface text-ink lg:hidden"
+        type="button"
+        aria-expanded="false"
+        aria-controls="mobile-navigation"
+        aria-label="Open navigation menu"
+        data-menu-toggle
+      >
+        <span class="sr-only">Open navigation menu</span>
+        <span class="relative block h-4 w-5" aria-hidden="true">
+          <span
+            class="absolute top-1 left-0 h-px w-5 bg-current transition-transform"
+            data-menu-line="top"
+          ></span>
+          <span
+            class="absolute bottom-1 left-0 h-px w-5 bg-current transition-transform"
+            data-menu-line="bottom"
+          ></span>
+        </span>
+      </button>
+    </div>
+
+    <div
+      id="mobile-navigation"
+      class="border-t border-line py-5 lg:hidden"
+      hidden
+      data-mobile-menu
+    >
+      <ul class="flex flex-col" role="list">
+        {
+          navigation.map((item, index) => (
+            <li>
+              <a
+                class="block border-b border-line/70 py-3 text-base font-medium text-ink"
+                href={item.href}
+                aria-current={index === 0 ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <ButtonLink class="mt-5 w-full" href="/#experiences">
+        Explore experiences
+      </ButtonLink>
     </div>
   </nav>
 </header>
+
+<script>
+  const header = document.querySelector('[data-site-header]');
+  const toggle = header?.querySelector('[data-menu-toggle]');
+  const menu = header?.querySelector('[data-mobile-menu]');
+
+  if (
+    toggle instanceof HTMLButtonElement &&
+    menu instanceof HTMLElement
+  ) {
+    const closeMenu = () => {
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Open navigation menu');
+      menu.hidden = true;
+    };
+
+    const openMenu = () => {
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.setAttribute('aria-label', 'Close navigation menu');
+      menu.hidden = false;
+      menu.querySelector('a')?.focus();
+    };
+
+    toggle.addEventListener('click', () => {
+      const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+      isOpen ? closeMenu() : openMenu();
+    });
+
+    menu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !menu.hidden) {
+        closeMenu();
+        toggle.focus();
+      }
+    });
+  }
+</script>

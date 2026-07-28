@@ -1,12 +1,38 @@
 @import "tailwindcss";
 
 :root {
+  --eh-background: #f5f2ea;
+  --eh-surface: #fffdf8;
+  --eh-text: #202521;
+  --eh-muted: #667069;
+  --eh-border: #d8d7ce;
+  --eh-accent: #92583f;
+  --eh-accent-hover: #74422f;
+  --eh-success: #3f6f59;
+  --eh-error: #a4483d;
+  --eh-section-space: clamp(5rem, 9vw, 8.5rem);
+  --eh-container: 76rem;
+  --eh-reading-width: 42rem;
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  color: #1c1917;
-  background: #fafaf9;
+    "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+  color: var(--eh-text);
+  background: var(--eh-background);
   font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+@theme inline {
+  --color-background: var(--eh-background);
+  --color-surface: var(--eh-surface);
+  --color-ink: var(--eh-text);
+  --color-muted: var(--eh-muted);
+  --color-line: var(--eh-border);
+  --color-accent: var(--eh-accent);
+  --color-accent-hover: var(--eh-accent-hover);
+  --color-success: var(--eh-success);
+  --color-error: var(--eh-error);
+  --font-sans: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-display: Georgia, "Times New Roman", ui-serif, serif;
 }
 
 html {
@@ -17,8 +43,242 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  background: var(--eh-background);
+  color: var(--eh-text);
+  line-height: 1.6;
 }
 
 a {
   text-underline-offset: 0.2em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--eh-accent) 22%, transparent);
+}
+
+:where(a, button, summary, input, textarea, select):focus-visible {
+  outline: 2px solid var(--eh-accent);
+  outline-offset: 4px;
+}
+
+.site-container {
+  width: min(100% - 2rem, var(--eh-container));
+  margin-inline: auto;
+}
+
+.reading-width {
+  max-width: var(--eh-reading-width);
+}
+
+.section-shell {
+  padding-block: var(--eh-section-space);
+}
+
+.section-rule {
+  border-top: 1px solid var(--eh-border);
+}
+
+.eyebrow {
+  color: var(--eh-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.display-title {
+  font-family: Georgia, "Times New Roman", ui-serif, serif;
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.button--primary {
+  background: var(--eh-accent);
+  color: #fffdf8;
+}
+
+.button--primary:hover {
+  background: var(--eh-accent-hover);
+  transform: translateY(-1px);
+}
+
+.button--secondary {
+  border-color: var(--eh-border);
+  background: transparent;
+  color: var(--eh-text);
+}
+
+.button--secondary:hover {
+  border-color: var(--eh-text);
+  background: var(--eh-surface);
+}
+
+.button--light {
+  background: var(--eh-surface);
+  color: var(--eh-text);
+}
+
+.button--light:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--eh-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.text-link::after {
+  content: "→";
+  transition: transform 180ms ease;
+}
+
+.text-link:hover::after {
+  transform: translateX(0.25rem);
+}
+
+.card {
+  border: 1px solid var(--eh-border);
+  border-radius: 1.25rem;
+  background: var(--eh-surface);
+  overflow: hidden;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--eh-accent) 45%, var(--eh-border));
+  box-shadow: 0 1.5rem 3.5rem rgb(32 37 33 / 8%);
+  transform: translateY(-0.25rem);
+}
+
+.media-frame {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #d8d0c0;
+}
+
+.media-frame::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgb(24 28 25 / 38%));
+  content: "";
+  pointer-events: none;
+}
+
+.media-nepal {
+  background:
+    radial-gradient(circle at 68% 30%, rgb(249 225 174 / 90%) 0 8%, transparent 9%),
+    linear-gradient(145deg, transparent 0 50%, rgb(92 74 57 / 32%) 51% 62%, transparent 63%),
+    linear-gradient(25deg, #7f4939, #c9946d 48%, #e7c995);
+}
+
+.media-new-zealand {
+  background:
+    radial-gradient(circle at 30% 24%, rgb(241 234 207 / 80%) 0 10%, transparent 11%),
+    linear-gradient(160deg, transparent 0 48%, rgb(28 65 63 / 52%) 49% 61%, transparent 62%),
+    linear-gradient(32deg, #173f3e, #508079 52%, #c4b997);
+}
+
+.media-journal {
+  background:
+    linear-gradient(135deg, transparent 0 44%, rgb(255 255 255 / 12%) 45% 55%, transparent 56%),
+    linear-gradient(32deg, #403e37, #8a7766 58%, #c8b89c);
+}
+
+.hero-enter {
+  animation: hero-enter 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-enter--delay {
+  animation-delay: 100ms;
+}
+
+[data-mobile-menu]:not([hidden]) {
+  animation: menu-enter 180ms ease-out both;
+}
+
+[data-menu-toggle][aria-expanded="true"] [data-menu-line="top"] {
+  transform: translateY(0.25rem) rotate(45deg);
+}
+
+[data-menu-toggle][aria-expanded="true"] [data-menu-line="bottom"] {
+  transform: translateY(-0.25rem) rotate(-45deg);
+}
+
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-0.4rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 40rem) {
+  .site-container {
+    width: min(100% - 4rem, var(--eh-container));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

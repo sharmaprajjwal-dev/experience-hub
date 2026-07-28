@@ -48,12 +48,14 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 1 establishes the Astro and Tailwind foundation, shared page layout,
-global styles, essential metadata, a basic homepage, and the initial content
-directory structure. No backend, analytics, Supabase integration, AI features,
-or additional UI frameworks are included.
+Milestone 2 establishes the premium responsive UI foundation: reusable design
+tokens and components, accessible desktop and mobile navigation, polished
+homepage sections, restrained motion, and reduced-motion support. No backend,
+analytics, Supabase integration, AI features, or additional UI frameworks are
+included.
 
 ## Validation
 
-Milestone 1 is validated by confirming that the development server starts and
-that `npm run build` completes successfully.
+Each milestone is validated by confirming that the development server starts,
+checking the homepage at mobile and desktop widths, and ensuring that
+`npm run build` completes successfully.

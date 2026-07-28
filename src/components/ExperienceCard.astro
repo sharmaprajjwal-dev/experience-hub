@@ -1,0 +1,50 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  restaurant: string;
+  description: string;
+  packageName: string;
+  mediaClass: 'media-nepal' | 'media-new-zealand';
+  href: string;
+}
+
+const {
+  eyebrow,
+  title,
+  restaurant,
+  description,
+  packageName,
+  mediaClass,
+  href,
+} = Astro.props;
+---
+
+<article class="card group">
+  <div
+    class:list={['media-frame aspect-[16/11]', mediaClass]}
+    role="img"
+    aria-label={`Placeholder artwork for ${title} at ${restaurant}`}
+  >
+    <span
+      class="absolute top-5 left-5 z-10 rounded-full border border-white/30 bg-black/15 px-3 py-1 text-[0.68rem] font-bold tracking-[0.16em] text-white uppercase backdrop-blur-sm"
+    >
+      {eyebrow}
+    </span>
+  </div>
+  <div class="p-6 sm:p-8">
+    <p class="text-xs font-bold tracking-[0.16em] text-accent uppercase">
+      {restaurant}
+    </p>
+    <h3 class="mt-3 font-display text-3xl leading-tight tracking-[-0.025em]">
+      {title}
+    </h3>
+    <p class="mt-4 leading-7 text-muted">{description}</p>
+    <div
+      class="mt-6 flex flex-col gap-4 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p class="text-sm font-medium text-ink">{packageName}</p>
+      <a class="text-link shrink-0" href={href}>View experience</a>
+    </div>
+  </div>
+</article>

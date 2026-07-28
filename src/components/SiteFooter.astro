@@ -1,12 +1,66 @@
 ---
 const currentYear = new Date().getFullYear();
+const links = [
+  { label: 'Experiences', href: '/#experiences' },
+  { label: 'Countries', href: '/#countries' },
+  { label: 'Journal', href: '/#journal' },
+  { label: 'About', href: '/#about' },
+];
 ---
 
-<footer class="border-t border-stone-200">
-  <div
-    class="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-8 text-sm text-stone-600 sm:flex-row sm:items-center sm:justify-between"
-  >
-    <p>&copy; {currentYear} ExperienceHub.</p>
-    <p>Curated dining experiences, thoughtfully presented.</p>
+<footer id="about" class="border-t border-line bg-ink text-surface">
+  <div class="site-container py-16 sm:py-20">
+    <div class="grid gap-12 lg:grid-cols-[1.5fr_1fr_1fr]">
+      <div class="max-w-md">
+        <a
+          class="font-display text-2xl tracking-[-0.03em]"
+          href="/"
+          aria-label="ExperienceHub home"
+        >
+          ExperienceHub
+        </a>
+        <p class="mt-5 leading-7 text-stone-300">
+          Thoughtful dining experiences rooted in place, people, and the pleasure
+          of gathering well.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="text-xs font-bold tracking-[0.18em] text-stone-400 uppercase">
+          Explore
+        </h2>
+        <ul class="mt-5 space-y-3" role="list">
+          {
+            links.map((link) => (
+              <li>
+                <a
+                  class="text-sm text-stone-200 transition-colors hover:text-white"
+                  href={link.href}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xs font-bold tracking-[0.18em] text-stone-400 uppercase">
+          Beginning in
+        </h2>
+        <p class="mt-5 font-display text-2xl">Nepal &amp; New Zealand</p>
+        <p class="mt-3 text-sm leading-6 text-stone-300">
+          More destinations will join the collection as ExperienceHub grows.
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="mt-16 flex flex-col gap-3 border-t border-white/15 pt-7 text-xs text-stone-400 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p>&copy; {currentYear} ExperienceHub. All rights reserved.</p>
+      <p>Dining, thoughtfully curated.</p>
+    </div>
   </div>
 </footer>

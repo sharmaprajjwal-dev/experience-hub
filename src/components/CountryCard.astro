@@ -1,0 +1,30 @@
+---
+interface Props {
+  country: string;
+  location: string;
+  description: string;
+  mediaClass: 'media-nepal' | 'media-new-zealand';
+  href: string;
+}
+
+const { country, location, description, mediaClass, href } = Astro.props;
+---
+
+<article class="card group">
+  <div
+    class:list={['media-frame aspect-[4/3]', mediaClass]}
+    role="img"
+    aria-label={`Atmospheric placeholder artwork inspired by ${country}`}
+  >
+    <p
+      class="absolute bottom-5 left-5 z-10 text-xs font-bold tracking-[0.18em] text-white uppercase"
+    >
+      {location}
+    </p>
+  </div>
+  <div class="p-6 sm:p-8">
+    <h3 class="font-display text-3xl tracking-[-0.025em]">{country}</h3>
+    <p class="mt-3 leading-7 text-muted">{description}</p>
+    <a class="text-link mt-6" href={href}>Discover {country}</a>
+  </div>
+</article>
