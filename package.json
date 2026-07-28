@@ -21,6 +21,7 @@
     "@supabase/supabase-js": "^2.110.9",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.1.4",
+    "stripe": "^22.3.2",
     "tailwindcss": "^4.3.3"
   }
 }

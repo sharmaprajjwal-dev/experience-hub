@@ -1,0 +1,107 @@
+---
+import type { PackageEntry } from '../lib/content';
+import type { PackagePaymentAction } from '../lib/payments';
+
+interface Props {
+  action: PackagePaymentAction;
+  packageEntry: PackageEntry;
+  country: string;
+  restaurant: string;
+  experience: string;
+}
+
+const {
+  action,
+  packageEntry,
+  country,
+  restaurant,
+  experience,
+} = Astro.props;
+const analytics = {
+  country,
+  restaurant,
+  experience,
+  package: packageEntry.data.slug,
+  currency: packageEntry.data.currency,
+  value:
+    packageEntry.data.priceStatus === 'confirmed'
+      ? packageEntry.data.price
+      : undefined,
+};
+---
+
+{
+  action.kind === 'dummy' ? (
+    <a
+      class="button button--primary mt-7 w-full"
+      href={action.href}
+      data-analytics-event="booking_button_clicked"
+      data-analytics-country={analytics.country}
+      data-analytics-restaurant={analytics.restaurant}
+      data-analytics-experience={analytics.experience}
+      data-analytics-package={analytics.package}
+      data-analytics-currency={analytics.currency}
+      data-analytics-value={analytics.value}
+    >
+      {action.label}
+    </a>
+  ) : action.kind === 'payment-link' ||
+    action.kind === 'checkout-session' ? (
+    <form
+      class="mt-7"
+      method="post"
+      action={action.endpoint}
+      data-checkout-form
+      data-analytics-country={analytics.country}
+      data-analytics-restaurant={analytics.restaurant}
+      data-analytics-experience={analytics.experience}
+      data-analytics-package={analytics.package}
+      data-analytics-currency={analytics.currency}
+      data-analytics-value={analytics.value}
+    >
+      <input type="hidden" name="package" value={packageEntry.data.slug} />
+      <button
+        class="button button--primary w-full"
+        type="submit"
+        data-analytics-event="booking_button_clicked"
+        data-analytics-country={analytics.country}
+        data-analytics-restaurant={analytics.restaurant}
+        data-analytics-experience={analytics.experience}
+        data-analytics-package={analytics.package}
+        data-analytics-currency={analytics.currency}
+        data-analytics-value={analytics.value}
+      >
+        {action.label}
+      </button>
+    </form>
+  ) : (
+    <div class="mt-7">
+      <span class="button button--secondary w-full" aria-disabled="true">
+        {action.label}
+      </span>
+      <p class="mt-3 text-center text-xs leading-5 text-muted">
+        {action.reason}
+      </p>
+    </div>
+  )
+}
+
+<script>
+  import { trackAnalyticsEvent } from '../lib/analytics';
+
+  document.querySelectorAll<HTMLFormElement>('[data-checkout-form]').forEach(
+    (form) => {
+      form.addEventListener('submit', () => {
+        const value = form.dataset.analyticsValue;
+        trackAnalyticsEvent('checkout_started', {
+          country: form.dataset.analyticsCountry,
+          restaurant: form.dataset.analyticsRestaurant,
+          experience: form.dataset.analyticsExperience,
+          package: form.dataset.analyticsPackage,
+          currency: form.dataset.analyticsCurrency,
+          value: value === undefined ? undefined : Number(value),
+        });
+      });
+    },
+  );
+</script>

@@ -98,6 +98,22 @@ const packages = defineCollection({
     featured: z.boolean(),
     active: z.boolean(),
     bookingStatus: z.enum(['available', 'coming-soon', 'unavailable']),
+    paymentEnabled: z.boolean(),
+    paymentMode: z.enum([
+      'dummy',
+      'payment-link',
+      'checkout-session',
+      'contact',
+    ]),
+    stripePriceId: z
+      .string()
+      .regex(/^price_[A-Za-z0-9]+$/)
+      .optional(),
+    stripePaymentLink: z
+      .string()
+      .url()
+      .optional(),
+    trustedAmountMinor: z.number().int().nonnegative().optional(),
   }),
 });
 

@@ -1,4 +1,5 @@
 ---
+import AnalyticsPageEvent from '../../components/AnalyticsPageEvent.astro';
 import ButtonLink from '../../components/ButtonLink.astro';
 import CollectionHero from '../../components/CollectionHero.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
@@ -40,8 +41,8 @@ if (!country) {
   throw new Error(`Country not found for restaurant: ${restaurant.data.slug}`);
 }
 
-const title = `Booking information: ${packageEntry.data.name} | ExperienceHub`;
-const description = `Booking information for ${packageEntry.data.name}. Checkout is not available yet and no payment will be taken.`;
+const title = `Demo checkout: ${packageEntry.data.name} | ExperienceHub`;
+const description = `Demonstration checkout for ${packageEntry.data.name}. No reservation or payment will be processed.`;
 const canonicalPath = `/book/${packageEntry.data.slug}`;
 ---
 
@@ -49,13 +50,22 @@ const canonicalPath = `/book/${packageEntry.data.slug}`;
   title={title}
   description={description}
   canonicalURL={canonicalPath}
+  robots="noindex, nofollow"
 >
   <SiteHeader />
+  <AnalyticsPageEvent
+    event="checkout_started"
+    country={country.data.slug}
+    restaurant={restaurant.data.slug}
+    experience={experience.data.slug}
+    package={packageEntry.data.slug}
+    currency={packageEntry.data.currency}
+  />
   <main>
     <CollectionHero
-      eyebrow="Temporary booking information"
-      title="Booking is coming in a later milestone."
-      description="This page confirms the package you selected, but checkout is not connected and no payment or reservation can be completed yet."
+      eyebrow="Dummy checkout mode"
+      title="Demonstration only — no payment will be processed."
+      description="This page demonstrates the booking pathway using the package you selected. It does not collect card details, create a reservation, or contact Stripe."
       mediaClass={experience.data.heroImage}
       imageAlt={`Placeholder artwork for ${packageEntry.data.name} booking information`}
       breadcrumbs={[
@@ -67,14 +77,14 @@ const canonicalPath = `/book/${packageEntry.data.slug}`;
           label: packageEntry.data.name,
           href: `/packages/${packageEntry.data.slug}`,
         },
-        { label: 'Booking information' },
+        { label: 'Demo checkout' },
       ]}
     />
 
     <section class="section-shell">
       <div class="site-container grid gap-10 lg:grid-cols-[1fr_0.8fr]">
         <article>
-          <p class="eyebrow">Selected package</p>
+          <p class="eyebrow">Demo order summary</p>
           <h2 class="mt-4 font-display text-4xl tracking-[-0.035em]">
             {packageEntry.data.name}
           </h2>
@@ -121,14 +131,15 @@ const canonicalPath = `/book/${packageEntry.data.slug}`;
         </article>
 
         <aside class="h-fit rounded-[1.25rem] border border-line bg-surface p-7 sm:p-8">
-          <p class="eyebrow">No checkout yet</p>
+          <p class="eyebrow">Safe demonstration</p>
           <h2 class="mt-4 font-display text-3xl">
-            Your selection has not been reserved.
+            Nothing will be charged or reserved.
           </h2>
           <p class="mt-4 leading-7 text-muted">
-            Online enquiries, availability, confirmed pricing, and secure
-            checkout will be introduced later. This temporary page does not
-            collect personal or payment information.
+            This dummy checkout does not ask for personal information or card
+            details. Return to the package to continue browsing; a real checkout
+            is available only when the site and package are explicitly
+            configured for Stripe test or production mode.
           </p>
           <div class="mt-7 flex flex-col gap-3">
             <ButtonLink href={`/packages/${packageEntry.data.slug}`}>

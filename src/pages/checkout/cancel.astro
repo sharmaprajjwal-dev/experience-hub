@@ -1,0 +1,52 @@
+---
+import ButtonLink from '../../components/ButtonLink.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getContentGraph } from '../../lib/content';
+
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+const packageSlug = Astro.url.searchParams.get('package') ?? '';
+const graph = await getContentGraph();
+const packageEntry = graph.packages.find(
+  ({ data }) => data.slug === packageSlug,
+);
+---
+
+<BaseLayout
+  title="Checkout cancelled | ExperienceHub"
+  description="No ExperienceHub payment was completed."
+  robots="noindex, nofollow"
+>
+  <SiteHeader />
+  <main class="section-shell">
+    <div class="site-container">
+      <section class="mx-auto max-w-2xl rounded-[1.5rem] border border-line bg-surface p-7 sm:p-12">
+        <p class="eyebrow">Checkout stopped</p>
+        <h1 class="mt-5 font-display text-5xl tracking-[-0.04em]">
+          No payment was confirmed.
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-muted">
+          Checkout was cancelled or could not be started. ExperienceHub has not
+          treated this visit as a completed payment or reservation.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          {
+            packageEntry && (
+              <ButtonLink href={`/packages/${packageEntry.data.slug}`}>
+                Return to package
+              </ButtonLink>
+            )
+          }
+          <ButtonLink href="/experiences" variant="secondary">
+            Explore experiences
+          </ButtonLink>
+        </div>
+      </section>
+    </div>
+  </main>
+  <SiteFooter />
+</BaseLayout>

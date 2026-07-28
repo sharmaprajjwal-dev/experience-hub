@@ -1,0 +1,79 @@
+---
+import ButtonLink from '../../components/ButtonLink.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getContentGraph } from '../../lib/content';
+import { retrieveCheckoutSession } from '../../lib/payments.server';
+
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+const sessionId = Astro.url.searchParams.get('session_id') ?? '';
+const verification = sessionId
+  ? await retrieveCheckoutSession({
+      sessionId,
+      runtimeEnvironment: Astro.locals.runtime?.env,
+    })
+  : { ok: false as const };
+const graph = await getContentGraph();
+const packageEntry = verification.ok
+  ? graph.packages.find(
+      ({ data }) => data.slug === verification.session.packageSlug,
+    )
+  : undefined;
+const paymentVerified = Boolean(
+  verification.ok &&
+    packageEntry &&
+    verification.session.mode === 'payment' &&
+    verification.session.status === 'complete' &&
+    verification.session.paymentStatus === 'paid' &&
+    verification.session.clientReferenceId === packageEntry.data.slug &&
+    verification.session.amountTotal ===
+      packageEntry.data.trustedAmountMinor &&
+    verification.session.currency === packageEntry.data.currency,
+);
+---
+
+<BaseLayout
+  title="Checkout status | ExperienceHub"
+  description="Server-verified ExperienceHub checkout status."
+  robots="noindex, nofollow"
+>
+  <SiteHeader />
+  <main class="section-shell">
+    <div class="site-container">
+      <section class="mx-auto max-w-2xl rounded-[1.5rem] border border-line bg-surface p-7 sm:p-12">
+        <p class="eyebrow">Checkout status</p>
+        <h1 class="mt-5 font-display text-5xl tracking-[-0.04em]">
+          {
+            paymentVerified
+              ? 'Payment verified by Stripe.'
+              : 'Payment is not yet verified.'
+          }
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-muted">
+          {
+            paymentVerified
+              ? 'The server retrieved this Checkout Session from Stripe and matched its paid status, package, amount, and currency. Restaurant fulfilment and reservation confirmation remain a separate step.'
+              : 'Reaching this URL does not prove that payment succeeded. The server could not verify a matching paid Checkout Session, so no completed payment or reservation is being claimed.'
+          }
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          {
+            packageEntry && (
+              <ButtonLink href={`/packages/${packageEntry.data.slug}`}>
+                View package
+              </ButtonLink>
+            )
+          }
+          <ButtonLink href="/experiences" variant="secondary">
+            Explore experiences
+          </ButtonLink>
+        </div>
+      </section>
+    </div>
+  </main>
+  <SiteFooter />
+</BaseLayout>

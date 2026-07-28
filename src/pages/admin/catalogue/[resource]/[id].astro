@@ -530,6 +530,106 @@ const maxSizeMb = MAX_CATALOGUE_IMAGE_BYTES / 1024 / 1024;
         )
       }
 
+      {
+        resource === 'packages' && (
+          <section class="rounded-[1.5rem] border border-line bg-surface p-6 sm:p-8">
+            <p class="eyebrow">Payment configuration</p>
+            <p class="mt-4 max-w-3xl text-sm leading-6 text-muted">
+              These fields contain public Stripe references only. Secret and
+              webhook keys belong in the deployment environment, never in the
+              catalogue.
+            </p>
+            <div class="mt-6 grid gap-6 sm:grid-cols-2">
+              <label class="flex items-start gap-3 sm:col-span-2">
+                <input
+                  class="mt-1 size-5"
+                  type="checkbox"
+                  name="payment_enabled"
+                  checked={isChecked('payment_enabled')}
+                />
+                <span>
+                  <span class="block text-sm font-semibold">
+                    Enable this package for the configured payment mode
+                  </span>
+                  <span class="mt-1 block text-xs leading-5 text-muted">
+                    Real payment also requires a matching PAYMENT_MODE
+                    deployment variable and complete trusted configuration.
+                  </span>
+                </span>
+              </label>
+              <div>
+                <label class="block text-sm font-semibold" for="payment_mode">
+                  Package payment mode <span class="text-error">*</span>
+                </label>
+                <select
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="payment_mode"
+                  name="payment_mode"
+                  required
+                >
+                  <option value="dummy" selected={field('payment_mode', 'dummy') === 'dummy'}>Dummy demonstration</option>
+                  <option value="payment-link" selected={field('payment_mode') === 'payment-link'}>Stripe Payment Link</option>
+                  <option value="checkout-session" selected={field('payment_mode') === 'checkout-session'}>Server-created Checkout Session</option>
+                  <option value="contact" selected={field('payment_mode') === 'contact'}>Contact restaurant</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="trusted_amount_minor">
+                  Trusted amount in minor units
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="trusted_amount_minor"
+                  name="trusted_amount_minor"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={field('trusted_amount_minor')}
+                  aria-describedby="trusted-amount-help"
+                />
+                <p id="trusted-amount-help" class="mt-2 text-xs leading-5 text-muted">
+                  For example, NZD 220.00 is 22000. The server checks this
+                  against the Stripe Price before creating Checkout.
+                </p>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="stripe_price_id">
+                  Stripe Price ID
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4 font-mono text-sm"
+                  id="stripe_price_id"
+                  name="stripe_price_id"
+                  type="text"
+                  maxlength="120"
+                  pattern="price_[A-Za-z0-9]+"
+                  placeholder="price_..."
+                  value={field('stripe_price_id')}
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="stripe_payment_link">
+                  Stripe Payment Link
+                </label>
+                <input
+                  class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4"
+                  id="stripe_payment_link"
+                  name="stripe_payment_link"
+                  type="url"
+                  maxlength="500"
+                  placeholder="https://buy.stripe.com/..."
+                  value={field('stripe_payment_link')}
+                  aria-describedby="payment-link-help"
+                />
+                <p id="payment-link-help" class="mt-2 text-xs leading-5 text-muted">
+                  Only buy.stripe.com and checkout.stripe.com links are accepted.
+                </p>
+              </div>
+            </div>
+          </section>
+        )
+      }
+
       <section class="rounded-[1.5rem] border border-line bg-surface p-6 sm:p-8">
         <p class="eyebrow">Image</p>
         <div class="mt-6 grid gap-7 md:grid-cols-[minmax(0,1fr)_minmax(15rem,0.7fr)]">

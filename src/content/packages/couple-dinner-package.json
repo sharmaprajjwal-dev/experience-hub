@@ -19,5 +19,7 @@
   "optionalNotes": "Harbour & Pine, this package, and the displayed price are fictional demo concepts created for ExperienceHub.",
   "featured": true,
   "active": true,
-  "bookingStatus": "coming-soon"
+  "bookingStatus": "coming-soon",
+  "paymentEnabled": true,
+  "paymentMode": "dummy"
 }

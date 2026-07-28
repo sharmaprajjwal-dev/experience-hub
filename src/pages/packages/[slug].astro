@@ -1,6 +1,7 @@
 ---
 import AnalyticsPageEvent from '../../components/AnalyticsPageEvent.astro';
 import ButtonLink from '../../components/ButtonLink.astro';
+import CheckoutAction from '../../components/CheckoutAction.astro';
 import CollectionHero from '../../components/CollectionHero.astro';
 import PackageCard from '../../components/PackageCard.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
@@ -15,6 +16,7 @@ import {
   getExperienceForPackage,
   getRestaurantForExperience,
 } from '../../lib/content';
+import { getPaymentActionForPackage } from '../../lib/payments.server';
 
 export const prerender = false;
 
@@ -50,6 +52,10 @@ const relatedPackages = graph.packages.filter(
 const title = `${packageEntry.data.name} at ${restaurant.data.name} | ExperienceHub`;
 const description = `${packageEntry.data.shortDescription} View placeholder pricing, inclusions, guest guidance, duration, and booking information.`;
 const canonicalPath = `/packages/${packageEntry.data.slug}`;
+const paymentAction = getPaymentActionForPackage(
+  packageEntry,
+  Astro.locals.runtime?.env,
+);
 const siteBase = Astro.site ?? Astro.url;
 const structuredData = [
   {
@@ -256,26 +262,22 @@ const structuredData = [
               </dd>
             </div>
           </dl>
-          <ButtonLink
-            class="mt-7 w-full"
-            href={`/book/${packageEntry.data.slug}`}
-            analyticsEvent="booking_button_clicked"
-            analytics={{
-              country: country.data.slug,
-              restaurant: restaurant.data.slug,
-              experience: experience.data.slug,
-              package: packageEntry.data.slug,
-              currency: packageEntry.data.currency,
-              value:
-                packageEntry.data.priceStatus === 'confirmed'
-                  ? packageEntry.data.price
-                  : undefined,
-            }}
-          >
-            Booking information
-          </ButtonLink>
+          <CheckoutAction
+            action={paymentAction}
+            packageEntry={packageEntry}
+            country={country.data.slug}
+            restaurant={restaurant.data.slug}
+            experience={experience.data.slug}
+          />
           <p class="mt-4 text-center text-xs leading-5 text-muted">
-            Checkout is not connected yet. No payment will be taken.
+            {
+              paymentAction.kind === 'dummy'
+                ? 'Demonstration only — no payment will be processed.'
+                : paymentAction.kind === 'payment-link' ||
+                    paymentAction.kind === 'checkout-session'
+                  ? 'Payment is completed on Stripe’s secure hosted checkout.'
+                  : 'No online payment action is available for this package.'
+            }
           </p>
         </aside>
       </div>

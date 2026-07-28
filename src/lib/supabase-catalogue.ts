@@ -75,6 +75,11 @@ interface PackageRow {
   featured: boolean;
   active: boolean;
   booking_status: 'available' | 'coming-soon' | 'unavailable';
+  payment_enabled: boolean;
+  payment_mode: 'dummy' | 'payment-link' | 'checkout-session' | 'contact';
+  stripe_price_id: string | null;
+  stripe_payment_link: string | null;
+  trusted_amount_minor: number | string | null;
   hero_image: string;
   image_path: string | null;
   image_alt: string | null;
@@ -232,6 +237,14 @@ export async function getSupabaseContentGraph(
       featured: row.featured,
       active: row.active,
       bookingStatus: row.booking_status,
+      paymentEnabled: row.payment_enabled,
+      paymentMode: row.payment_mode,
+      stripePriceId: row.stripe_price_id ?? undefined,
+      stripePaymentLink: row.stripe_payment_link ?? undefined,
+      trustedAmountMinor:
+        row.trusted_amount_minor === null
+          ? undefined
+          : Number(row.trusted_amount_minor),
     }),
   );
 

@@ -19,6 +19,8 @@ destinations over time.
   image delivery
 - Server-side OpenRouter recommendations with structured response validation
 - Consent-gated Google Tag Manager with a direct Google Analytics 4 fallback
+- Stripe-hosted payments through validated Payment Links or server-created
+  Checkout Sessions, with a safe dummy mode
 - On-demand public catalogue and private administration routes
 
 ## Content architecture
@@ -205,7 +207,7 @@ height values and use lazy loading for images below the fold.
 
 To test with a configured Supabase project and promoted administrator:
 
-1. Apply all four migrations in filename order.
+1. Apply all migrations in filename order.
 2. Configure `.env` with the browser-safe project URL and anonymous/publishable
    key.
 3. Run `npm run dev`, sign in at `/admin/login`, and open
@@ -366,8 +368,8 @@ market.
 3. If GTM is not used, place that value in
    `PUBLIC_GA_MEASUREMENT_ID`.
 4. In **Admin → Data display → Events**, mark only the relevant received events
-   as key events. Purchase is prepared for a later checkout milestone and must
-   not be treated as live until a trusted purchase confirmation emits it.
+   as key events. Treat purchase as a key event only when the server-verified
+   checkout flow is enabled and tested.
 
 Google's current property and web-stream flow is documented in
 [Set up Analytics for a website](https://support.google.com/analytics/answer/14183469),
@@ -401,8 +403,8 @@ ExperienceHub pushes these consistently named events after consent:
 | `ai_assistant_opened` | A **Help me choose** entry point is selected |
 | `ai_recommendation_clicked` | A generated package recommendation is opened |
 | `booking_button_clicked` | A package booking-information action is selected |
-| `checkout_started` | Reserved for a later real checkout start |
-| `purchase_completed` | Reserved for a later trusted purchase confirmation |
+| `checkout_started` | A dummy or Stripe checkout pathway is started |
+| `purchase_completed` | Reserved for a later idempotent booking record |
 
 GTM events are pushed to `window.dataLayer` with only relevant catalogue fields:
 `country`, `restaurant`, `experience`, `package`, `currency`, and non-negative
@@ -430,6 +432,160 @@ creating another analytics client.
 - If duplicate events appear, check for a hard-coded Google tag, a second GTM
   container, or GA4 direct initialisation outside this integration before
   publishing.
+
+## Stripe checkout
+
+ExperienceHub supports three deliberately separate payment modes:
+
+1. **Dummy** is the default. It opens a local demonstration checkout stating
+   that no payment or reservation will be processed. It never contacts Stripe.
+2. **Payment Link** redirects through the server to a package-specific
+   Stripe-hosted link. Only HTTPS links on `buy.stripe.com` or
+   `checkout.stripe.com` are accepted.
+3. **Checkout Session** posts only the package slug to the Astro server. The
+   server reloads the active package from the trusted catalogue, retrieves its
+   Stripe Price, checks the Price is active and one-time, and verifies currency
+   and minor-unit amount before creating a Checkout Session.
+
+`PAYMENT_MODE` is a deployment safety switch. Missing, empty, or invalid values
+resolve to `dummy`. A real mode activates only when the package is also enabled,
+uses the same package payment mode, is available, and has all required trusted
+fields. Incomplete real configuration produces a contact state rather than
+attempting a charge.
+
+Apply
+`supabase/migrations/20260728000004_add_package_payments.sql` after the previous
+catalogue migrations, then rerun `supabase/seed.sql` if demo records are needed.
+The migration adds payment-enabled state, package payment mode, Stripe Price
+ID, validated Payment Link, and trusted minor-unit amount. It stores no Stripe
+secret. The admin package editor can manage these public references.
+
+### Stripe account and sandbox setup
+
+1. Create a [Stripe account](https://dashboard.stripe.com/register). New
+   accounts can use a sandbox without moving real money; accepting real
+   payments requires account activation.
+2. Stay in a sandbox while developing. Stripe sandbox objects and keys are
+   separate from live-mode objects and keys.
+3. In **Product catalogue**, create one product per bookable package and a
+   one-time Price in the package currency. Copy the resulting `price_...` ID.
+   Stripe Price amounts use the currency’s minor unit; review
+   [Stripe’s currency rules](https://docs.stripe.com/currencies) for
+   zero-decimal and special-case currencies.
+4. For Payment Link mode, create a Payment Link for the matching Price in
+   **More → Payment Links**, then copy its Stripe-hosted URL.
+5. Find the sandbox publishable and secret keys under **Developers → API
+   keys**. Publishable keys begin with `pk_test_`; server secret keys begin with
+   `sk_test_`.
+
+Stripe’s documentation explains
+[sandbox and live accounts](https://docs.stripe.com/get-started/account),
+[API key types](https://docs.stripe.com/keys),
+[products and one-time Prices](https://docs.stripe.com/products-prices/manage-prices),
+and [Payment Link creation](https://docs.stripe.com/payment-links/create).
+
+### Local configuration
+
+Copy `.env.example` to the ignored `.env` and begin in dummy mode:
+
+```dotenv
+PAYMENT_MODE=dummy
+PUBLIC_SITE_URL=http://localhost:4321
+PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+```
+
+`PUBLIC_STRIPE_PUBLISHABLE_KEY` is intentionally browser-safe. The current
+Stripe-hosted redirect flow does not load Stripe.js, so it is prepared but not
+required. `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are server-only and
+must never use the `PUBLIC_` prefix.
+
+To use a Payment Link:
+
+1. Set the package to **Stripe Payment Link**, add the validated link, enable
+   payment, set a confirmed catalogue price and matching trusted minor-unit
+   amount, and set booking status to available.
+2. Set `PAYMENT_MODE=payment-link` and restart the server.
+
+To use a server-created Checkout Session:
+
+1. Give the package a confirmed catalogue price and available booking status.
+2. Set its mode to **Server-created Checkout Session**, add the Stripe Price ID,
+   and enter the expected amount in minor units—for example, NZD 220.00 is
+   `22000`.
+3. Add the sandbox `STRIPE_SECRET_KEY`, set the exact `PUBLIC_SITE_URL`, set
+   `PAYMENT_MODE=checkout-session`, and restart.
+
+The browser never submits a price, currency, Stripe Price ID, success URL, or
+secret. It submits only the package slug. The server obtains every payment
+value from the active trusted catalogue and Stripe. Payment fields must not be
+added to query strings or hidden inputs as a source of truth.
+
+### Success, cancellation, and webhooks
+
+Stripe returns Checkout Sessions to `/checkout/success` with a session ID. The
+page does not trust its URL: it retrieves the session from Stripe and claims a
+verified payment only when status, paid state, package metadata, amount, and
+currency match the catalogue. `/checkout/cancel` never claims payment.
+
+Configure a Stripe webhook endpoint at:
+
+```text
+https://your-production-domain.example/api/stripe-webhook
+```
+
+Subscribe initially to `checkout.session.completed` and
+`checkout.session.expired`. Copy that endpoint’s `whsec_...` signing secret into
+the server-only `STRIPE_WEBHOOK_SECRET`. The endpoint reads the unparsed request
+body and verifies the `Stripe-Signature` header before accepting an event, as
+required by Stripe’s
+[webhook verification guidance](https://docs.stripe.com/webhooks).
+
+This milestone’s webhook is a verified, side-effect-free scaffold. It creates
+no booking record, so repeated delivery is harmless. A later booking workflow
+must store Stripe event IDs uniquely and make each status transition
+idempotent before fulfilment is attached.
+
+For local webhook testing, the
+[Stripe CLI](https://docs.stripe.com/stripe-cli/use-cli) can forward sandbox
+events:
+
+```sh
+stripe listen \
+  --events checkout.session.completed,checkout.session.expired \
+  --forward-to localhost:4321/api/stripe-webhook
+```
+
+Use the `whsec_...` value printed by that command for the local webhook secret.
+For interactive Checkout tests, use Stripe’s documented sandbox card
+`4242 4242 4242 4242`, any future expiry date, and any valid CVC. Never enter
+real card information in a sandbox or test with live credentials.
+[Stripe’s test-card guide](https://docs.stripe.com/testing) lists successful,
+declined, and authentication scenarios.
+
+### Cloudflare and production
+
+In **Workers & Pages → project → Settings → Variables and Secrets**, add
+`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as encrypted secrets. Add
+`PAYMENT_MODE`, `PUBLIC_SITE_URL`, and the optional publishable key as ordinary
+environment variables. Cloudflare documents encrypted values in
+[Workers secrets](https://developers.cloudflare.com/workers/configuration/secrets/).
+
+Before changing from dummy mode:
+
+- test the whole flow with sandbox products, Prices, keys, cards, and webhooks;
+- confirm the package’s catalogue amount and Stripe Price match;
+- replace the placeholder site URL and configure the production webhook;
+- review taxes, refunds, fulfilment, terms, privacy, and target-market legal
+  requirements;
+- activate live mode and switch all related objects and keys together.
+
+Card numbers and card verification data are entered only on Stripe-hosted
+Checkout and do not touch ExperienceHub’s server. This reduces payment-data
+scope, but the project does not claim blanket PCI compliance. Stripe account
+configuration and the production integration still require an appropriate
+security and compliance review.
 
 ## Local installation
 
@@ -467,10 +623,11 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 11 adds configurable GA4 and GTM support, consent-gated loading,
-stored privacy preferences, GTM-over-GA4 precedence, and a constrained
-catalogue event utility. Checkout, purchase emission, public signup,
-service-role access, Stripe, and conversation storage remain out of scope.
+Milestone 12 adds dummy checkout, validated Stripe Payment Links, trusted
+server-created Checkout Sessions, server-verified success status, cancellation
+handling, and a signature-verifying webhook scaffold. Booking persistence,
+fulfilment, refunds, public signup, service-role access, and conversation
+storage remain out of scope.
 
 Canonical metadata currently uses the reserved placeholder host
 `https://experiencehub.example`. Replace the `site` value in
@@ -478,9 +635,10 @@ Canonical metadata currently uses the reserved placeholder host
 
 ## Validation
 
-Each milestone is validated with `npm run build`. Milestone 11 additionally
-checks the no-ID build, GTM precedence when both public identifiers are set,
-the direct-GA4 fallback when GTM is absent, consent-gated external script
-creation, and the absence of real identifiers in the Git diff. Live GA4 and GTM
-collection still require configured properties, a published container where
-applicable, consent, and browser-side verification.
+Each milestone is validated with `npm run build`. Milestone 12 additionally
+checks the full dummy flow, same-origin POST handling, arbitrary-package and
+arbitrary-price rejection, Payment Link host validation, server-only Stripe
+imports, webhook signature enforcement, no-secret browser bundles, and
+credential scans. Stripe sandbox checkout is tested only when explicit sandbox
+credentials and matching test catalogue configuration are available. Live
+credentials are never used without explicit instruction.

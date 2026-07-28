@@ -4,6 +4,12 @@ import {
   uploadCatalogueImage,
   type CatalogueImageSection,
 } from './storage';
+import {
+  isAllowedStripePaymentLink,
+  isStripePriceId,
+  packagePaymentModes,
+  toStripeMinorUnits,
+} from './payments';
 
 export const catalogueResources = [
   'countries',
@@ -410,11 +416,72 @@ function parseRecordValues(resource: CatalogueResource, formData: FormData) {
 
   const bookingStatus = text(formData, 'booking_status');
   const priceStatus = text(formData, 'price_status');
+  const paymentMode = text(formData, 'payment_mode');
+  const paymentEnabled = checked(formData, 'payment_enabled');
+  const stripePriceId = text(formData, 'stripe_price_id');
+  const stripePaymentLink = text(formData, 'stripe_payment_link');
+  const trustedAmountMinor = optionalNonnegativeInteger(
+    formData,
+    'trusted_amount_minor',
+  );
   if (!['available', 'coming-soon', 'unavailable'].includes(bookingStatus)) {
     return failure('Choose a valid booking status.');
   }
   if (!['placeholder', 'confirmed'].includes(priceStatus)) {
     return failure('Choose whether the price is placeholder or confirmed.');
+  }
+  if (!packagePaymentModes.some((mode) => mode === paymentMode)) {
+    return failure('Choose a valid package payment mode.');
+  }
+  if (stripePriceId && !isStripePriceId(stripePriceId)) {
+    return failure('Stripe Price IDs must begin with price_.');
+  }
+  if (
+    stripePaymentLink &&
+    !isAllowedStripePaymentLink(stripePaymentLink)
+  ) {
+    return failure(
+      'Stripe Payment Links must use https://buy.stripe.com or https://checkout.stripe.com.',
+    );
+  }
+  if (trustedAmountMinor === 'invalid') {
+    return failure('Trusted amount must be a whole number of minor units.');
+  }
+  if (
+    paymentEnabled &&
+    paymentMode === 'payment-link' &&
+    (!stripePaymentLink ||
+      trustedAmountMinor === null ||
+      trustedAmountMinor <= 0 ||
+      priceStatus !== 'confirmed' ||
+      bookingStatus !== 'available')
+  ) {
+    return failure(
+      'Payment Link mode requires an available package, confirmed price, valid Stripe link, and positive trusted amount.',
+    );
+  }
+  if (
+    paymentEnabled &&
+    paymentMode === 'checkout-session' &&
+    (!stripePriceId ||
+      trustedAmountMinor === null ||
+      trustedAmountMinor <= 0 ||
+      priceStatus !== 'confirmed' ||
+      bookingStatus !== 'available')
+  ) {
+    return failure(
+      'Checkout Session mode requires an available package, confirmed price, Stripe Price ID, and positive trusted amount.',
+    );
+  }
+  if (
+    paymentEnabled &&
+    (paymentMode === 'payment-link' ||
+      paymentMode === 'checkout-session') &&
+    toStripeMinorUnits(price, currency) !== trustedAmountMinor
+  ) {
+    return failure(
+      'Trusted amount must exactly match the displayed package price in minor units.',
+    );
   }
 
   return {
@@ -434,6 +501,11 @@ function parseRecordValues(resource: CatalogueResource, formData: FormData) {
       optional_notes: text(formData, 'optional_notes') || null,
       featured: checked(formData, 'featured'),
       booking_status: bookingStatus,
+      payment_enabled: paymentEnabled,
+      payment_mode: paymentMode,
+      stripe_price_id: stripePriceId || null,
+      stripe_payment_link: stripePaymentLink || null,
+      trusted_amount_minor: trustedAmountMinor,
     },
   };
 }
@@ -456,6 +528,13 @@ function nonnegativeNumber(formData: FormData, name: string) {
   const raw = text(formData, name);
   const value = Number(raw);
   return raw !== '' && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function optionalNonnegativeInteger(formData: FormData, name: string) {
+  const raw = text(formData, name);
+  if (raw === '') return null;
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value >= 0 ? value : 'invalid';
 }
 
 function failure(error: string) {

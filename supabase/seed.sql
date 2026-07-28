@@ -149,7 +149,12 @@ insert into public.packages (
   optional_notes,
   featured,
   active,
-  booking_status
+  booking_status,
+  payment_enabled,
+  payment_mode,
+  stripe_price_id,
+  stripe_payment_link,
+  trusted_amount_minor
 )
 values
   (
@@ -174,7 +179,12 @@ values
     'Placeholder demo price only; this is not a confirmed price from The Pizza House.',
     true,
     true,
-    'coming-soon'
+    'coming-soon',
+    true,
+    'dummy',
+    null,
+    null,
+    null
   ),
   (
     '00000000-0000-4000-8000-000000000302',
@@ -198,7 +208,12 @@ values
     'Placeholder demo price only; this is not a confirmed price from The Pizza House.',
     false,
     true,
-    'coming-soon'
+    'coming-soon',
+    true,
+    'dummy',
+    null,
+    null,
+    null
   ),
   (
     '00000000-0000-4000-8000-000000000303',
@@ -222,7 +237,12 @@ values
     'Placeholder demo price only; this is not a confirmed price from The Pizza House.',
     false,
     true,
-    'coming-soon'
+    'coming-soon',
+    true,
+    'dummy',
+    null,
+    null,
+    null
   ),
   (
     '00000000-0000-4000-8000-000000000304',
@@ -246,7 +266,12 @@ values
     'Fictional demo content and placeholder price only; no live restaurant offer or confirmed business price is represented.',
     true,
     true,
-    'coming-soon'
+    'coming-soon',
+    true,
+    'dummy',
+    null,
+    null,
+    null
   )
 on conflict (slug) do update set
   experience_id = excluded.experience_id,
@@ -264,4 +289,9 @@ on conflict (slug) do update set
   optional_notes = excluded.optional_notes,
   featured = excluded.featured,
   active = excluded.active,
-  booking_status = excluded.booking_status;
+  booking_status = excluded.booking_status,
+  payment_enabled = excluded.payment_enabled,
+  payment_mode = excluded.payment_mode,
+  stripe_price_id = excluded.stripe_price_id,
+  stripe_payment_link = excluded.stripe_payment_link,
+  trusted_amount_minor = excluded.trusted_amount_minor;

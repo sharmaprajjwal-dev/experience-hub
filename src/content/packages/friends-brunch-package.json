@@ -19,5 +19,7 @@
   "optionalNotes": "The displayed price is a concept placeholder, not a confirmed price from The Pizza House. The table can note dietary preferences when enquiries open.",
   "featured": false,
   "active": true,
-  "bookingStatus": "coming-soon"
+  "bookingStatus": "coming-soon",
+  "paymentEnabled": true,
+  "paymentMode": "dummy"
 }
