@@ -1,0 +1,129 @@
+---
+import AdminAuthLayout from '../../layouts/AdminAuthLayout.astro';
+import {
+  getAuthQueryMessage,
+  getFriendlySignInError,
+  isEmailAddress,
+} from '../../lib/auth';
+
+export const prerender = false;
+
+const supabase = Astro.locals.supabase;
+const queryMessage = getAuthQueryMessage(Astro.url);
+let errorMessage = queryMessage.error;
+let statusMessage = queryMessage.status;
+let email = '';
+
+if (Astro.request.method === 'POST') {
+  statusMessage = undefined;
+  const formData = await Astro.request.formData();
+  email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const password = String(formData.get('password') ?? '');
+
+  if (!supabase) {
+    errorMessage =
+      'Administrator authentication is not configured for this environment.';
+  } else if (!isEmailAddress(email) || password.length === 0) {
+    errorMessage = 'Enter a valid email address and password.';
+  } else {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error || !data.user) {
+      errorMessage = getFriendlySignInError(error?.code);
+    } else {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        await supabase.auth.signOut();
+        errorMessage =
+          'Administrator access could not be verified. Please try again.';
+      } else if (profile?.role !== 'admin') {
+        await supabase.auth.signOut();
+        errorMessage =
+          'This account is valid but does not have administrator access.';
+      } else {
+        return Astro.redirect('/admin', 303);
+      }
+    }
+  }
+}
+---
+
+<AdminAuthLayout
+  title="Administrator sign in | ExperienceHub"
+  description="Secure administrator access for ExperienceHub."
+  eyebrow="Administrator access"
+  heading="Welcome back."
+  introduction="Sign in with an administrator account created by the ExperienceHub site owner."
+>
+  {
+    errorMessage && (
+      <div
+        class="rounded-xl border border-error/35 bg-error/8 p-4 text-sm leading-6 text-error"
+        role="alert"
+      >
+        {errorMessage}
+      </div>
+    )
+  }
+  {
+    statusMessage && (
+      <div
+        class="rounded-xl border border-success/35 bg-success/8 p-4 text-sm leading-6 text-success"
+        role="status"
+      >
+        {statusMessage}
+      </div>
+    )
+  }
+
+  <form class="mt-7 space-y-5" method="post">
+    <div>
+      <label class="block text-sm font-semibold" for="email">Email address</label>
+      <input
+        class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4 text-ink"
+        id="email"
+        name="email"
+        type="email"
+        autocomplete="username"
+        inputmode="email"
+        required
+        value={email}
+      />
+    </div>
+    <div>
+      <div class="flex items-center justify-between gap-4">
+        <label class="block text-sm font-semibold" for="password">Password</label>
+        <a
+          class="text-sm font-semibold text-accent hover:text-accent-hover"
+          href="/admin/forgot-password"
+        >
+          Forgot password?
+        </a>
+      </div>
+      <input
+        class="mt-2 min-h-12 w-full rounded-xl border border-line bg-background px-4 text-ink"
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+      />
+    </div>
+    <button class="button button--primary w-full" type="submit">
+      Sign in securely
+    </button>
+  </form>
+
+  <p class="mt-7 text-center text-xs leading-5 text-muted">
+    There is no public registration. Access is created and assigned by the site
+    owner in Supabase.
+  </p>
+</AdminAuthLayout>

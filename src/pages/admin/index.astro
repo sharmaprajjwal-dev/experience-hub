@@ -1,0 +1,98 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const prerender = false;
+
+const adminUser = Astro.locals.adminUser;
+---
+
+<BaseLayout
+  title="Administrator dashboard | ExperienceHub"
+  description="Private ExperienceHub administration."
+  canonicalURL="/admin"
+  robots="noindex, nofollow"
+>
+  <header class="border-b border-line bg-surface">
+    <div class="site-container flex min-h-20 items-center justify-between gap-6">
+      <a
+        class="font-display text-xl tracking-[-0.03em]"
+        href="/"
+        aria-label="ExperienceHub home"
+      >
+        ExperienceHub
+      </a>
+      <form action="/admin/logout" method="post">
+        <button class="button button--secondary" type="submit">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  <main>
+    <section class="border-b border-line bg-surface">
+      <div class="site-container py-16 sm:py-24">
+        <p class="eyebrow">Private administration</p>
+        <h1 class="mt-5 max-w-4xl font-display text-[clamp(3.25rem,7vw,6rem)] leading-[0.98] tracking-[-0.045em] text-balance">
+          A calm place to manage what comes next.
+        </h1>
+        <div class="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+          <p>
+            <span class="text-muted">Signed in as</span>
+            <strong class="ml-2">{adminUser?.email ?? 'Administrator'}</strong>
+          </p>
+          <p>
+            <span class="text-muted">Role</span>
+            <strong class="ml-2">Administrator</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell">
+      <div class="site-container">
+        <div class="max-w-2xl">
+          <p class="eyebrow">Milestone 7</p>
+          <h2 class="mt-4 font-display text-4xl tracking-[-0.035em]">
+            Authentication is ready.
+          </h2>
+          <p class="mt-5 text-lg leading-8 text-muted">
+            Catalogue management will arrive in a later milestone. These cards
+            are intentionally non-interactive placeholders.
+          </p>
+        </div>
+
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          {
+            [
+              {
+                eyebrow: 'Catalogue',
+                title: 'Experiences and packages',
+                copy: 'Create and update catalogue records in a future milestone.',
+              },
+              {
+                eyebrow: 'Editorial',
+                title: 'Journal content',
+                copy: 'Publishing workflows are not connected to this dashboard yet.',
+              },
+              {
+                eyebrow: 'Operations',
+                title: 'Bookings',
+                copy: 'Booking and payment management remain intentionally unavailable.',
+              },
+            ].map((card) => (
+              <article class="rounded-[1.25rem] border border-line bg-surface p-7">
+                <p class="eyebrow">{card.eyebrow}</p>
+                <h3 class="mt-4 font-display text-2xl leading-tight">
+                  {card.title}
+                </h3>
+                <p class="mt-4 text-sm leading-6 text-muted">{card.copy}</p>
+                <p class="mt-7 border-t border-line pt-5 text-xs font-bold tracking-[0.16em] text-muted uppercase">
+                  Coming later
+                </p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

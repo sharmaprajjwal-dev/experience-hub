@@ -11,6 +11,7 @@ interface Props {
   author?: string;
   ogImage?: URL | string;
   ogImageAlt?: string;
+  robots?: string;
   structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
 
@@ -24,6 +25,7 @@ const {
   author,
   ogImage = '/og.jpg',
   ogImageAlt = 'ExperienceHub Journal — considered dining guides and curated experiences',
+  robots,
   structuredData,
 } = Astro.props;
 
@@ -44,6 +46,7 @@ const jsonLd = structuredData ? JSON.stringify(structuredData) : undefined;
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {robots && <meta name="robots" content={robots} />}
     {canonical && <link rel="canonical" href={canonical} />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

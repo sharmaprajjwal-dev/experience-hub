@@ -13,8 +13,10 @@ destinations over time.
 - Astro Content Collections with Zod-validated local JSON and Markdown entries
 - Astro's official sitemap and RSS packages
 - The official Supabase JavaScript client for optional catalogue reads
-- Static HTML with no client-side UI framework; Supabase is an optional data
-  backend
+- Supabase's SSR helper with Astro's Node adapter for cookie-based administrator
+  sessions
+- Prerendered public pages with on-demand server rendering limited to private
+  administration routes
 
 ## Content architecture
 
@@ -50,9 +52,9 @@ without taking down the site.
 To prepare a hosted project:
 
 1. Create a project from the [Supabase dashboard](https://supabase.com/dashboard).
-2. Open the project's **SQL Editor** and run
-   `supabase/migrations/20260728000000_create_catalogue.sql`.
-3. Run `supabase/seed.sql` in the SQL Editor after the migration. The seed is
+2. Open the project's **SQL Editor** and run the files in
+   `supabase/migrations/` in filename order.
+3. Run `supabase/seed.sql` in the SQL Editor after both migrations. The seed is
    demonstration content; all prices are marked as placeholders and the New
    Zealand restaurant and experience are explicitly fictional.
 4. Open **Project Settings → Data API** to find the project URL.
@@ -88,6 +90,73 @@ secret store instead.
 Teams using the Supabase CLI can apply the same committed files with the normal
 migration and seed workflow. No Supabase CLI dependency is required by the
 Astro application.
+
+## Administrator authentication
+
+ExperienceHub has no public registration route. Before creating an
+administrator, open **Authentication → Providers → Email** in Supabase and
+disable **Allow new users to sign up**. Also keep anonymous sign-ins disabled.
+
+Create the initial user through the trusted Supabase Dashboard:
+
+1. Open **Authentication → Users**.
+2. Choose **Add user → Create new user**, enter the owner email, and set a
+   temporary strong password through the Dashboard.
+3. Confirm that the `public.profiles` trigger created a profile with the safe
+   default `member` role.
+4. In the Supabase SQL Editor, promote only the intended user:
+
+```sql
+update public.profiles
+set role = 'admin'
+where id = (
+  select id
+  from auth.users
+  where email = 'owner@example.com'
+);
+```
+
+Replace the example email before running the statement. Role assignment is a
+trusted database operation and is intentionally unavailable from the website.
+The profile migration grants signed-in users read access only to their own
+profile and creates no browser-accessible insert, update, or delete policy.
+
+To test login with real project credentials:
+
+1. Configure `.env` as described above.
+2. Start the project with `npm run dev`.
+3. Visit `/admin/login` and sign in with the promoted administrator.
+4. Confirm `/admin` shows the signed-in email and that the logout button returns
+   to the login screen.
+5. Confirm an unauthenticated request to `/admin` redirects to login.
+6. Confirm a valid user whose profile remains `member` cannot open `/admin`.
+
+Password recovery uses `/admin/forgot-password` and
+`/admin/reset-password`. Add both the local and production reset URLs to
+**Authentication → URL Configuration → Redirect URLs** in Supabase, for
+example:
+
+```text
+http://localhost:4321/admin/reset-password
+https://your-production-domain.example/admin/reset-password
+```
+
+The recovery email establishes a supported Supabase PKCE cookie session before
+the user chooses a new password of at least 12 characters. After a successful
+reset, the session is signed out and the administrator must authenticate again.
+
+Authentication and authorization are separate checks. Supabase Auth verifies
+who owns the session; server middleware then reads that user's RLS-protected
+profile to determine whether the database-assigned role is `admin`. Checking a
+role only in frontend JavaScript would be insecure because browser code and
+editable user metadata can be manipulated. The middleware therefore validates
+the user with Supabase before the protected page renders.
+
+Current limitations are intentional: there is no public signup, MFA interface,
+catalogue-management interface, or service-role client. Supabase rate limits and
+email delivery settings still need production review. Admin routes require a
+Node-compatible deployment because they are rendered on demand, and the
+placeholder canonical domain must be replaced before deployment.
 
 ## Local installation
 
@@ -125,12 +194,12 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 6 adds the official Supabase client, a reusable client module, a
-read-through catalogue data layer with local demo fallback, and versioned
-catalogue migration and seed SQL. The SQL enables Row Level Security and
-read-only active-content policies. No admin dashboard, public data mutations,
-service-role credential, checkout, Stripe, CMS, analytics, runtime AI features,
-or additional UI framework is included.
+Milestone 7 adds server-rendered administrator login, logout, session detection,
+password recovery, and reset routes. Middleware verifies the Supabase Auth user
+and requires an RLS-protected `admin` profile before rendering `/admin`. The
+landing page contains non-interactive placeholders only; catalogue management,
+public signup, service-role access, checkout, Stripe, CMS, analytics, and
+runtime AI features remain out of scope.
 
 Canonical metadata currently uses the reserved placeholder host
 `https://experiencehub.example`. Replace the `site` value in
@@ -138,7 +207,9 @@ Canonical metadata currently uses the reserved placeholder host
 
 ## Validation
 
-Each milestone is validated with `npm run build`. Milestone 6 additionally
-checks the build without Supabase variables, with clearly fake placeholder
-configuration, and confirms the same local demo routes remain available. A live
-connection is not claimed until real project credentials are supplied.
+Each milestone is validated with `npm run build`. Milestone 7 additionally
+checks public prerendering, on-demand admin routes, unauthenticated redirects,
+configuration error states, POST-only logout, RLS role enforcement in
+middleware, sitemap exclusion, and the absence of public signup or embedded
+credentials. Live login is tested only when real Supabase credentials are
+available.

@@ -38,13 +38,23 @@ export function getSupabaseConfigurationStatus(): SupabaseConfigurationStatus {
   return 'configured';
 }
 
+export function getSupabasePublicConfiguration() {
+  if (getSupabaseConfigurationStatus() !== 'configured') return null;
+
+  return {
+    url: supabaseUrl!,
+    anonKey: supabaseAnonKey!,
+  };
+}
+
 let client: SupabaseClient | undefined;
 
 export function getSupabaseClient(): SupabaseClient | null {
-  if (getSupabaseConfigurationStatus() !== 'configured') return null;
+  const configuration = getSupabasePublicConfiguration();
+  if (!configuration) return null;
 
   try {
-    client ??= createClient(supabaseUrl!, supabaseAnonKey!, {
+    client ??= createClient(configuration.url, configuration.anonKey, {
       auth: {
         autoRefreshToken: false,
         detectSessionInUrl: false,

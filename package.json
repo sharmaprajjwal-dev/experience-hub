@@ -14,8 +14,10 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^11.0.2",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
+    "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.9",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.1.4",
