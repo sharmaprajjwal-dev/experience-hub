@@ -9,6 +9,15 @@
   ],
   "workers_dev": true,
   "preview_urls": true,
+  "keep_vars": true,
+  "vars": {
+    "PUBLIC_SITE_URL": "https://experiencehub.sharmaprajjwal8848.workers.dev",
+    "PUBLIC_SUPABASE_URL": "https://kiuoyvpbkzfdpkmmvmqy.supabase.co",
+    "PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Hx4uV-tiRqt4vqhM9JuGdQ_urct_myM",
+    "OPENROUTER_MODEL": "openrouter/free",
+    "SITE_URL": "https://experiencehub.sharmaprajjwal8848.workers.dev",
+    "SITE_NAME": "ExperienceHub"
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist",
