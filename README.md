@@ -18,6 +18,7 @@ destinations over time.
 - Supabase Storage with authenticated administrator uploads and public catalogue
   image delivery
 - Server-side OpenRouter recommendations with structured response validation
+- Consent-gated Google Tag Manager with a direct Google Analytics 4 fallback
 - On-demand public catalogue and private administration routes
 
 ## Content architecture
@@ -330,6 +331,106 @@ Without both `OPENROUTER_API_KEY` and `OPENROUTER_MODEL`, the site still builds
 and the panel displays a non-technical unavailable state while the normal
 catalogue remains usable.
 
+## Consent-aware analytics
+
+Analytics is optional and disabled when no valid identifier is configured.
+These identifiers are public configuration values, not secret API keys:
+
+```dotenv
+PUBLIC_GTM_CONTAINER_ID=
+PUBLIC_GA_MEASUREMENT_ID=
+```
+
+Google Tag Manager is the preferred integration point. When a valid
+`PUBLIC_GTM_CONTAINER_ID` is present, ExperienceHub loads GTM only after the
+visitor accepts analytics and does not initialise GA4 directly. Configure the
+Google tag inside that GTM container. A valid `PUBLIC_GA_MEASUREMENT_ID` enables
+direct GA4 only when GTM is absent. This precedence prevents the same page and
+events from being sent by two independently initialised tags.
+
+The demonstration consent panel offers accept and reject choices, stores the
+preference in browser local storage, and exposes **Privacy preferences** in the
+footer. Rejection loads no Google tracking. Changing an accepted preference to
+rejected reloads the page so the already-loaded tag cannot continue on that
+page. This small consent system is a technical foundation, not a claim of legal
+compliance in every country. Production consent language, retention settings,
+regional behavior, and legal requirements must be reviewed for each target
+market.
+
+### Google Analytics 4 setup
+
+1. In [Google Analytics](https://analytics.google.com/), create an Analytics
+   account and GA4 property.
+2. Create a **Web** data stream for the production site and copy its measurement
+   ID, which begins with `G-`.
+3. If GTM is not used, place that value in
+   `PUBLIC_GA_MEASUREMENT_ID`.
+4. In **Admin → Data display → Events**, mark only the relevant received events
+   as key events. Purchase is prepared for a later checkout milestone and must
+   not be treated as live until a trusted purchase confirmation emits it.
+
+Google's current property and web-stream flow is documented in
+[Set up Analytics for a website](https://support.google.com/analytics/answer/14183469),
+and key-event controls are covered in
+[Mark events as key events](https://support.google.com/analytics/answer/12571843).
+
+### Google Tag Manager setup
+
+1. In [Google Tag Manager](https://tagmanager.google.com/), create an account
+   and a **Web** container, then copy the container ID beginning with `GTM-`.
+2. Add it as `PUBLIC_GTM_CONTAINER_ID`; leave it blank to disable GTM.
+3. In the container, add a **Google tag** using the GA4 measurement ID.
+4. Create Custom Event triggers for the ExperienceHub event names below.
+5. Create GA4 Event tags using those triggers. Add data-layer variables only for
+   the approved parameters that each event needs.
+6. Use **Preview** to test, then submit and publish the verified container.
+
+Google documents the
+[Google tag in Tag Manager](https://support.google.com/tagmanager/answer/14842872),
+[Custom Event triggers](https://support.google.com/tagmanager/answer/7679219),
+[Preview mode](https://support.google.com/tagmanager/answer/6107056), and
+[publishing](https://support.google.com/tagmanager/answer/6107163).
+
+ExperienceHub pushes these consistently named events after consent:
+
+| Event | When used |
+| --- | --- |
+| `country_selected` | A country destination link is selected |
+| `experience_viewed` | An experience detail page is viewed |
+| `package_viewed` | A package detail page is viewed |
+| `ai_assistant_opened` | A **Help me choose** entry point is selected |
+| `ai_recommendation_clicked` | A generated package recommendation is opened |
+| `booking_button_clicked` | A package booking-information action is selected |
+| `checkout_started` | Reserved for a later real checkout start |
+| `purchase_completed` | Reserved for a later trusted purchase confirmation |
+
+GTM events are pushed to `window.dataLayer` with only relevant catalogue fields:
+`country`, `restaurant`, `experience`, `package`, `currency`, and non-negative
+`value`. Direct GA4 sends the same event names and fields through `gtag`. The
+utility deliberately ignores other fields; it does not track free-text AI
+messages, dietary notes, personal data, payment details, or entire form
+payloads. Future checkout code should import the same utility rather than
+creating another analytics client.
+
+### Verification
+
+- Clear the `experiencehub_analytics_consent` local-storage value, reload, and
+  confirm no request to `googletagmanager.com` occurs before acceptance.
+- Reject, reload, and confirm no GTM, Google tag, or GA collection request is
+  made.
+- For GTM, use
+  [Preview mode](https://support.google.com/tagmanager/answer/6107056) to verify
+  Custom Event triggers and their approved data-layer values.
+- For direct GA4 or a published GTM container, enable debug mode and use
+  [GA4 DebugView](https://support.google.com/analytics/answer/7201382) to verify
+  event names and parameters.
+- In browser developer tools, inspect the Network panel for `gtm.js`,
+  `gtag/js`, and GA collection requests. Exactly one loading strategy should be
+  present: GTM when its ID is configured, otherwise direct GA4.
+- If duplicate events appear, check for a hard-coded Google tag, a second GTM
+  container, or GA4 direct initialisation outside this integration before
+  publishing.
+
 ## Local installation
 
 Requires Node.js 22.12 or newer.
@@ -366,11 +467,10 @@ npm run preview
 
 ## Current milestone status
 
-Milestone 10 adds a server-only OpenRouter package recommendation assistant,
-strict catalogue grounding, validated structured responses, safe fallback
-recommendations, input limits, timeout handling, and basic rate limiting.
-Public signup, service-role access, checkout, Stripe, analytics, and
-conversation storage remain out of scope.
+Milestone 11 adds configurable GA4 and GTM support, consent-gated loading,
+stored privacy preferences, GTM-over-GA4 precedence, and a constrained
+catalogue event utility. Checkout, purchase emission, public signup,
+service-role access, Stripe, and conversation storage remain out of scope.
 
 Canonical metadata currently uses the reserved placeholder host
 `https://experiencehub.example`. Replace the `site` value in
@@ -378,9 +478,9 @@ Canonical metadata currently uses the reserved placeholder host
 
 ## Validation
 
-Each milestone is validated with `npm run build`. Milestone 10 additionally
-checks browser-bundle secret exclusion, Git-diff credential scans, invalid and
-oversized input rejection, same-origin enforcement, method handling, no-key
-availability, catalogue-only response validation, and rate-limit behavior. Live
-recommendations are tested only when a valid OpenRouter key and configured model
-are available.
+Each milestone is validated with `npm run build`. Milestone 11 additionally
+checks the no-ID build, GTM precedence when both public identifiers are set,
+the direct-GA4 fallback when GTM is absent, consent-gated external script
+creation, and the absence of real identifiers in the Git diff. Live GA4 and GTM
+collection still require configured properties, a published container where
+applicable, consent, and browser-side verification.

@@ -47,6 +47,11 @@ const isCurrent = (href: string) => {
                   class="text-sm font-medium text-muted transition-colors hover:text-ink"
                   href={item.href}
                   aria-current={isCurrent(item.href) ? 'page' : undefined}
+                  data-analytics-event={
+                    item.href === '/experiences#assistant'
+                      ? 'ai_assistant_opened'
+                      : undefined
+                  }
                 >
                   {item.label}
                 </a>
@@ -54,7 +59,12 @@ const isCurrent = (href: string) => {
             ))
           }
         </ul>
-        <ButtonLink href="/experiences#assistant">Explore</ButtonLink>
+        <ButtonLink
+          href="/experiences#assistant"
+          analyticsEvent="ai_assistant_opened"
+        >
+          Explore
+        </ButtonLink>
       </div>
 
       <button
@@ -93,6 +103,11 @@ const isCurrent = (href: string) => {
                 class="block border-b border-line/70 py-3 text-base font-medium text-ink"
                 href={item.href}
                 aria-current={isCurrent(item.href) ? 'page' : undefined}
+                data-analytics-event={
+                  item.href === '/experiences#assistant'
+                    ? 'ai_assistant_opened'
+                    : undefined
+                }
               >
                 {item.label}
               </a>
@@ -100,7 +115,11 @@ const isCurrent = (href: string) => {
           ))
         }
       </ul>
-      <ButtonLink class="mt-5 w-full" href="/experiences#assistant">
+      <ButtonLink
+        class="mt-5 w-full"
+        href="/experiences#assistant"
+        analyticsEvent="ai_assistant_opened"
+      >
         Help me choose
       </ButtonLink>
     </div>

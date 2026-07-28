@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import AnalyticsConsent from '../components/AnalyticsConsent.astro';
+import { getAnalyticsConfiguration } from '../lib/analytics-config';
 
 interface Props {
   title?: string;
@@ -36,6 +38,7 @@ const canonical = canonicalURL
     : undefined;
 const socialImage = new URL(ogImage, Astro.site ?? Astro.url).toString();
 const jsonLd = structuredData ? JSON.stringify(structuredData) : undefined;
+const analyticsConfiguration = getAnalyticsConfiguration();
 ---
 
 <!doctype html>
@@ -96,5 +99,10 @@ const jsonLd = structuredData ? JSON.stringify(structuredData) : undefined;
   </head>
   <body class="bg-background text-ink antialiased">
     <slot />
+    {
+      analyticsConfiguration && (
+        <AnalyticsConsent configuration={analyticsConfiguration} />
+      )
+    }
   </body>
 </html>

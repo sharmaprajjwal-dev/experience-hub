@@ -1,0 +1,31 @@
+---
+import type {
+  AnalyticsEventName,
+  AnalyticsEventParameters,
+} from '../lib/analytics';
+
+interface Props extends AnalyticsEventParameters {
+  event: AnalyticsEventName;
+}
+
+const {
+  event,
+  country,
+  restaurant,
+  experience,
+  package: packageSlug,
+  currency,
+  value,
+} = Astro.props;
+---
+
+<span
+  data-analytics-page-event={event}
+  data-analytics-country={country}
+  data-analytics-restaurant={restaurant}
+  data-analytics-experience={experience}
+  data-analytics-package={packageSlug}
+  data-analytics-currency={currency}
+  data-analytics-value={value}
+  hidden
+></span>

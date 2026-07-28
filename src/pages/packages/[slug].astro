@@ -1,4 +1,5 @@
 ---
+import AnalyticsPageEvent from '../../components/AnalyticsPageEvent.astro';
 import ButtonLink from '../../components/ButtonLink.astro';
 import CollectionHero from '../../components/CollectionHero.astro';
 import PackageCard from '../../components/PackageCard.astro';
@@ -123,6 +124,19 @@ const structuredData = [
   structuredData={structuredData}
 >
   <SiteHeader />
+  <AnalyticsPageEvent
+    event="package_viewed"
+    country={country.data.slug}
+    restaurant={restaurant.data.slug}
+    experience={experience.data.slug}
+    package={packageEntry.data.slug}
+    currency={packageEntry.data.currency}
+    value={
+      packageEntry.data.priceStatus === 'confirmed'
+        ? packageEntry.data.price
+        : undefined
+    }
+  />
   <main>
     <CollectionHero
       eyebrow={`${formatBookingStatus(packageEntry.data.bookingStatus)} · ${country.data.name}`}
@@ -245,6 +259,18 @@ const structuredData = [
           <ButtonLink
             class="mt-7 w-full"
             href={`/book/${packageEntry.data.slug}`}
+            analyticsEvent="booking_button_clicked"
+            analytics={{
+              country: country.data.slug,
+              restaurant: restaurant.data.slug,
+              experience: experience.data.slug,
+              package: packageEntry.data.slug,
+              currency: packageEntry.data.currency,
+              value:
+                packageEntry.data.priceStatus === 'confirmed'
+                  ? packageEntry.data.price
+                  : undefined,
+            }}
           >
             Booking information
           </ButtonLink>

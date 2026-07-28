@@ -1,0 +1,269 @@
+---
+import type { AnalyticsConfiguration } from '../lib/analytics-config';
+
+interface Props {
+  configuration: AnalyticsConfiguration;
+}
+
+const { configuration } = Astro.props;
+---
+
+<div
+  class="consent-banner"
+  data-consent-banner
+  role="region"
+  aria-labelledby="analytics-consent-title"
+  hidden
+>
+  <div>
+    <p class="consent-banner__eyebrow">Privacy choice</p>
+    <h2 id="analytics-consent-title" class="consent-banner__title">
+      Help us improve ExperienceHub
+    </h2>
+    <p class="consent-banner__copy">
+      With your permission, we use analytics to understand which catalogue
+      pages and actions are useful. We do not send AI messages or personal
+      details to analytics.
+    </p>
+  </div>
+  <div class="consent-banner__actions">
+    <button class="button button--primary" type="button" data-consent-accept>
+      Accept analytics
+    </button>
+    <button class="button button--secondary" type="button" data-consent-reject>
+      Reject
+    </button>
+  </div>
+</div>
+
+<dialog
+  class="consent-dialog"
+  data-consent-dialog
+  aria-labelledby="privacy-preferences-title"
+>
+  <form method="dialog">
+    <p class="consent-banner__eyebrow">Privacy preferences</p>
+    <h2 id="privacy-preferences-title" class="consent-dialog__title">
+      Optional analytics
+    </h2>
+    <p class="consent-dialog__copy">
+      Analytics is off until you accept. You can reject it or change your
+      preference here. Reloading after a rejection prevents further tracking
+      from the current page.
+    </p>
+    <div class="consent-dialog__actions">
+      <button class="button button--primary" type="button" data-consent-accept>
+        Accept analytics
+      </button>
+      <button class="button button--secondary" type="button" data-consent-reject>
+        Reject analytics
+      </button>
+      <button class="button button--ghost" type="submit">Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<div
+  data-analytics-configuration
+  data-analytics-mode={configuration.mode}
+  data-analytics-id={configuration.id}
+  hidden
+></div>
+
+<script>
+  import {
+    analyticsEventNames,
+    trackAnalyticsEvent,
+    type AnalyticsEventName,
+    type AnalyticsEventParameters,
+  } from '../lib/analytics';
+
+  const CONSENT_STORAGE_KEY = 'experiencehub_analytics_consent';
+  const configurationElement = document.querySelector<HTMLElement>(
+    '[data-analytics-configuration]',
+  );
+  const consentBanner = document.querySelector<HTMLElement>(
+    '[data-consent-banner]',
+  );
+  const consentDialog = document.querySelector<HTMLDialogElement>(
+    '[data-consent-dialog]',
+  );
+  const preferenceButtons = document.querySelectorAll<HTMLButtonElement>(
+    '[data-privacy-preferences]',
+  );
+  const mode = configurationElement?.dataset.analyticsMode;
+  const identifier = configurationElement?.dataset.analyticsId;
+  const analyticsEnabled =
+    (mode === 'gtm' || mode === 'ga4') && Boolean(identifier);
+
+  const readPreference = () => {
+    try {
+      const value = window.localStorage.getItem(CONSENT_STORAGE_KEY);
+      return value === 'accepted' || value === 'rejected' ? value : 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  };
+
+  const savePreference = (preference: 'accepted' | 'rejected') => {
+    try {
+      window.localStorage.setItem(CONSENT_STORAGE_KEY, preference);
+    } catch {
+      // The in-memory choice still applies when storage is unavailable.
+    }
+  };
+
+  const revealPreferenceControls = () => {
+    if (!analyticsEnabled) return;
+
+    preferenceButtons.forEach((button) => {
+      button.hidden = false;
+    });
+  };
+
+  const eventParametersFromElement = (element: HTMLElement) => {
+    const value = element.dataset.analyticsValue;
+    return {
+      country: element.dataset.analyticsCountry,
+      restaurant: element.dataset.analyticsRestaurant,
+      experience: element.dataset.analyticsExperience,
+      package: element.dataset.analyticsPackage,
+      currency: element.dataset.analyticsCurrency,
+      value: value === undefined ? undefined : Number(value),
+    } satisfies AnalyticsEventParameters;
+  };
+
+  const trackPageEvent = () => {
+    const element = document.querySelector<HTMLElement>(
+      '[data-analytics-page-event]',
+    );
+    const event = element?.dataset.analyticsPageEvent;
+
+    if (
+      !element ||
+      !event ||
+      !analyticsEventNames.includes(event as AnalyticsEventName) ||
+      element.dataset.analyticsTracked === 'true'
+    ) {
+      return;
+    }
+
+    if (
+      trackAnalyticsEvent(
+        event as AnalyticsEventName,
+        eventParametersFromElement(element),
+      )
+    ) {
+      element.dataset.analyticsTracked = 'true';
+    }
+  };
+
+  const activateAnalytics = () => {
+    if (
+      (mode !== 'gtm' && mode !== 'ga4') ||
+      !identifier ||
+      window.experienceHubAnalytics?.loaded
+    ) {
+      return;
+    }
+
+    window.dataLayer = window.dataLayer || [];
+    window.experienceHubAnalytics = {
+      consent: 'accepted',
+      loaded: true,
+      mode,
+    };
+
+    if (mode === 'gtm') {
+      window.dataLayer.push({
+        'gtm.start': Date.now(),
+        event: 'gtm.js',
+      });
+
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(identifier)}`;
+      document.head.append(script);
+    } else {
+      window.gtag = function gtag() {
+        window.dataLayer?.push(arguments);
+      };
+      window.gtag('js', new Date());
+      window.gtag('config', identifier);
+
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(identifier)}`;
+      document.head.append(script);
+    }
+
+    trackPageEvent();
+  };
+
+  const acceptAnalytics = () => {
+    savePreference('accepted');
+    consentBanner?.setAttribute('hidden', '');
+    consentDialog?.close();
+    activateAnalytics();
+    revealPreferenceControls();
+  };
+
+  const rejectAnalytics = () => {
+    const wasLoaded = window.experienceHubAnalytics?.loaded === true;
+    savePreference('rejected');
+    consentBanner?.setAttribute('hidden', '');
+    consentDialog?.close();
+
+    if (window.experienceHubAnalytics) {
+      window.experienceHubAnalytics.consent = 'rejected';
+    }
+
+    revealPreferenceControls();
+    if (wasLoaded) window.location.reload();
+  };
+
+  document.querySelectorAll('[data-consent-accept]').forEach((button) => {
+    button.addEventListener('click', acceptAnalytics);
+  });
+
+  document.querySelectorAll('[data-consent-reject]').forEach((button) => {
+    button.addEventListener('click', rejectAnalytics);
+  });
+
+  preferenceButtons.forEach((button) => {
+    button.addEventListener('click', () => consentDialog?.showModal());
+  });
+
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const element = target.closest<HTMLElement>('[data-analytics-event]');
+    const analyticsEvent = element?.dataset.analyticsEvent;
+
+    if (
+      !element ||
+      !analyticsEvent ||
+      !analyticsEventNames.includes(analyticsEvent as AnalyticsEventName)
+    ) {
+      return;
+    }
+
+    trackAnalyticsEvent(
+      analyticsEvent as AnalyticsEventName,
+      eventParametersFromElement(element),
+    );
+  });
+
+  const storedPreference = readPreference();
+
+  if (analyticsEnabled) {
+    revealPreferenceControls();
+
+    if (storedPreference === 'accepted') {
+      activateAnalytics();
+    } else if (storedPreference === 'unknown') {
+      consentBanner?.removeAttribute('hidden');
+    }
+  }
+</script>

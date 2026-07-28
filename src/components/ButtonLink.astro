@@ -1,9 +1,16 @@
 ---
+import type {
+  AnalyticsEventName,
+  AnalyticsEventParameters,
+} from '../lib/analytics';
+
 interface Props {
   href: string;
   variant?: 'primary' | 'secondary' | 'light';
   class?: string;
   ariaLabel?: string;
+  analyticsEvent?: AnalyticsEventName;
+  analytics?: AnalyticsEventParameters;
 }
 
 const {
@@ -11,6 +18,8 @@ const {
   variant = 'primary',
   class: className,
   ariaLabel,
+  analyticsEvent,
+  analytics = {},
 } = Astro.props;
 ---
 
@@ -18,6 +27,13 @@ const {
   class:list={['button', `button--${variant}`, className]}
   href={href}
   aria-label={ariaLabel}
+  data-analytics-event={analyticsEvent}
+  data-analytics-country={analytics.country}
+  data-analytics-restaurant={analytics.restaurant}
+  data-analytics-experience={analytics.experience}
+  data-analytics-package={analytics.package}
+  data-analytics-currency={analytics.currency}
+  data-analytics-value={analytics.value}
 >
   <slot />
 </a>

@@ -228,6 +228,8 @@ const { countries, configured } = Astro.props;
 {
   configured && (
     <script>
+      import { trackAnalyticsEvent } from '../lib/analytics';
+
       const form =
         document.querySelector<HTMLFormElement>('#recommendation-form');
       const submit = document.querySelector<HTMLButtonElement>(
@@ -343,6 +345,11 @@ const { countries, configured } = Astro.props;
             link.className = 'button button--light mt-5';
             link.href = recommendation.href;
             link.textContent = 'Review package';
+            link.addEventListener('click', () => {
+              trackAnalyticsEvent('ai_recommendation_clicked', {
+                package: recommendation.slug,
+              });
+            });
             card.append(link);
             cards.append(card);
           });

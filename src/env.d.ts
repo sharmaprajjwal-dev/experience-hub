@@ -6,6 +6,8 @@ import type {
 } from '@supabase/supabase-js';
 
 interface ImportMetaEnv {
+  readonly PUBLIC_GA_MEASUREMENT_ID?: string;
+  readonly PUBLIC_GTM_CONTAINER_ID?: string;
   readonly OPENROUTER_API_KEY?: string;
   readonly OPENROUTER_MODEL?: string;
   readonly SITE_URL?: string;

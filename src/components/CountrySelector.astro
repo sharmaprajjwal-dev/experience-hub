@@ -33,6 +33,8 @@ const { countries } = await getContentGraph();
             ]}
             href={`/countries/${data.slug}`}
             aria-current={currentSlug === data.slug ? 'page' : undefined}
+            data-analytics-event="country_selected"
+            data-analytics-country={data.slug}
           >
             {data.name}
           </a>

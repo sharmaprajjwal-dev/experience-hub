@@ -1,4 +1,5 @@
 ---
+import AnalyticsPageEvent from '../../components/AnalyticsPageEvent.astro';
 import CollectionHero from '../../components/CollectionHero.astro';
 import PackageComparison from '../../components/PackageComparison.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
@@ -41,6 +42,12 @@ const description = experience.data.shortDescription;
 
 <BaseLayout title={title} description={description}>
   <SiteHeader />
+  <AnalyticsPageEvent
+    event="experience_viewed"
+    country={country.data.slug}
+    restaurant={restaurant.data.slug}
+    experience={experience.data.slug}
+  />
   <main>
     <CollectionHero
       eyebrow={`${experience.data.type} · ${restaurant.data.city}, ${country.data.name}`}
