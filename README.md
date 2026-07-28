@@ -13,7 +13,7 @@ destinations over time.
 - Astro Content Collections with Zod-validated local JSON and Markdown entries
 - Astro's official sitemap and RSS packages
 - The official Supabase JavaScript client for optional catalogue reads
-- Supabase's SSR helper with Astro's Node adapter for cookie-based administrator
+- Supabase's SSR helper with Astro middleware for cookie-based administrator
   sessions
 - Supabase Storage with authenticated administrator uploads and public catalogue
   image delivery
@@ -21,7 +21,10 @@ destinations over time.
 - Consent-gated Google Tag Manager with a direct Google Analytics 4 fallback
 - Stripe-hosted payments through validated Payment Links or server-created
   Checkout Sessions, with a safe dummy mode
-- On-demand public catalogue and private administration routes
+- Cloudflare Workers through Astro's official adapter for on-demand catalogue,
+  administration, AI, and payment routes
+- Prerendered Journal pages and edge-served static assets in the same hybrid
+  deployment
 
 ## Content architecture
 
@@ -159,9 +162,10 @@ the user with Supabase before the protected page renders.
 
 Current limitations are intentional: there is no public signup, MFA interface,
 bulk catalogue workflow, or service-role client. Supabase rate limits and email
-delivery settings still need production review. Admin and catalogue routes
-require a Node-compatible deployment because they are rendered on demand, and
-the placeholder canonical domain must be replaced before deployment.
+delivery settings still need production review. Admin and catalogue routes use
+the configured Cloudflare Workers runtime because they are rendered on demand.
+The canonical origin must be configured through `PUBLIC_SITE_URL` before a
+production launch.
 
 ## Catalogue image storage
 
@@ -300,9 +304,9 @@ according to the deployment policy. A Wrangler-managed Worker can instead use:
 npx wrangler secret put OPENROUTER_API_KEY
 ```
 
-The endpoint reads Node runtime variables, Astro build-time server variables,
-or Cloudflare runtime bindings. Keep `OPENROUTER_API_KEY` server-only and never
-give it a `PUBLIC_` prefix. The browser bundle has no reason to receive it.
+The endpoint reads Cloudflare runtime bindings through `cloudflare:workers`.
+Keep `OPENROUTER_API_KEY` server-only and never give it a `PUBLIC_` prefix. The
+browser bundle has no reason to receive it.
 
 If a key is leaked, create a replacement, update the deployment secret, verify
 the new key, and revoke the old key immediately. OpenRouter supports usage
@@ -587,58 +591,308 @@ scope, but the project does not claim blanket PCI compliance. Stripe account
 configuration and the production integration still require an appropriate
 security and compliance review.
 
-## Local installation
+## Production architecture
 
-Requires Node.js 22.12 or newer.
+ExperienceHub is a hybrid Astro application deployed as one Cloudflare Worker:
+
+- Journal pages and local assets are prerendered during `astro build`.
+- Catalogue pages render on demand so active Supabase changes can appear
+  without a rebuild.
+- Authentication, admin mutations, OpenRouter requests, Stripe Checkout, and
+  webhook verification execute only in server routes.
+- Cloudflare serves generated assets and invokes Astro's Worker entry point for
+  application routes.
+- Supabase remains the database, Auth provider, and image store. No Cloudflare
+  KV, D1, R2, Queues, or Images binding is configured.
+- Supabase cookie sessions are separate from Astro Sessions. The configured
+  in-memory Astro session driver is unused and prevents the adapter from
+  provisioning an unnecessary KV namespace.
+
+The committed `wrangler.jsonc` uses Astro's current unified Cloudflare entry
+point, enables `nodejs_compat` for Stripe and Supabase, serves `dist` assets,
+enables version preview URLs, and uses the custom static `404.html`.
+`imageService: "passthrough"` avoids an unnecessary Cloudflare Images
+dependency.
+
+## Environment variables
+
+Copy `.env.example` to the ignored `.env` for local work. Do not put real values
+in source files, `wrangler.jsonc`, screenshots, issue comments, or build logs.
+
+### Public variables
+
+These identifiers and browser configuration values are intentionally public:
+
+| Variable | Purpose |
+| --- | --- |
+| `PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `PUBLIC_SUPABASE_ANON_KEY` | Browser-safe anonymous or publishable key; RLS remains the security boundary |
+| `PUBLIC_GA_MEASUREMENT_ID` | Direct GA4 fallback when GTM is absent |
+| `PUBLIC_GTM_CONTAINER_ID` | Preferred consent-gated analytics integration |
+| `PUBLIC_STRIPE_PUBLISHABLE_KEY` | Browser-safe Stripe identifier reserved for future Stripe.js use |
+| `PUBLIC_SITE_URL` | Exact canonical production origin and trusted Stripe return origin |
+
+Because `PUBLIC_` values can be compiled into HTML or browser JavaScript, add
+them to **Workers & Pages → ExperienceHub → Settings → Build → Variables and
+Secrets** for Git builds. Also add `PUBLIC_SITE_URL` to the Worker's runtime
+variables because checkout validates it at request time. A public identifier is
+not an authorization mechanism.
+
+### Server configuration
+
+These values are not credentials, but they control server behavior:
+
+| Variable | Purpose |
+| --- | --- |
+| `PAYMENT_MODE` | `dummy` by default; later `payment-link` or `checkout-session` |
+| `OPENROUTER_MODEL` | Explicit currently available model selected by the operator |
+| `SITE_URL` | Optional OpenRouter attribution origin |
+| `SITE_NAME` | Optional OpenRouter attribution name |
+
+Store these as normal Worker variables. Keep `PAYMENT_MODE=dummy` until the
+entire Stripe sandbox flow and package configuration have been verified.
+
+### Secret variables
+
+These values belong only in **Workers & Pages → ExperienceHub → Settings →
+Variables and Secrets** as encrypted secrets:
+
+| Variable | Purpose |
+| --- | --- |
+| `OPENROUTER_API_KEY` | Server-to-server recommendation requests |
+| `STRIPE_SECRET_KEY` | Server-created Checkout Sessions and verification |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signature verification |
+
+They must never use `PUBLIC_`, enter GitHub source files, or be exposed to
+browser code. The Supabase service-role key is intentionally not used. A
+CLI-managed deployment can set secrets interactively:
+
+```sh
+npx wrangler secret put OPENROUTER_API_KEY
+npx wrangler secret put STRIPE_SECRET_KEY
+npx wrangler secret put STRIPE_WEBHOOK_SECRET
+```
+
+## Local development
+
+Node.js 22.12 or newer is required.
 
 ```sh
 git clone <repository-url>
 cd experience-hub
 npm install
-```
-
-## Development
-
-Start the local development server:
-
-```sh
+cp .env.example .env
 npm run dev
 ```
 
-## Production build
+Useful commands:
 
-Create an optimized production build:
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Astro development server using the Cloudflare runtime |
+| `npm run build` | Production hybrid build |
+| `npm run preview` | Astro preview of the production output |
+| `npm run cf:dev` | Build and run the output through Wrangler locally |
+| `npm run cf:types` | Regenerate Worker types after binding changes |
+| `npm run deploy:preview` | Upload a version without promoting it |
+| `npm run deploy` | Build and deploy the active Worker version |
 
-```sh
-npm run build
+## Cloudflare deployment
+
+The project uses Cloudflare **Workers**, not a static-only Pages deployment,
+because server endpoints and protected routes are required. Cloudflare
+recommends Workers for new Astro full-stack applications.
+
+### Local CLI deployment
+
+1. Create or sign in to a Cloudflare account.
+2. Run `npx wrangler login` and complete browser authorization.
+3. Add the variables and secrets listed above.
+4. Keep `PAYMENT_MODE=dummy` for the first deployment.
+5. Run `npm run deploy`.
+6. Record the returned `https://experiencehub.<account-subdomain>.workers.dev`
+   URL.
+7. Set `PUBLIC_SITE_URL` and `SITE_URL` to that exact origin in build and
+   runtime configuration, rebuild, and deploy again so canonical, sitemap, and
+   checkout origins are correct.
+
+Cloudflare's current Workers route uses a `workers.dev` subdomain. A
+`pages.dev` hostname applies to Cloudflare Pages and is not used by this
+server-capable deployment.
+
+### Git-based production and preview deployments
+
+In **Workers & Pages**, create or select a Worker named `experiencehub`, connect
+the GitHub repository under **Settings → Builds**, and use:
+
+```text
+Build command: npm run build
+Production deploy command: npx wrangler deploy
+Preview deploy command: npx wrangler versions upload
+Root directory: /
 ```
 
-## Preview
+The dashboard Worker name must match `wrangler.jsonc`. Select the production
+branch and enable non-production branch builds for isolated version preview
+URLs. Configure variables for both production and preview triggers; use dummy
+payment mode and sandbox-only integrations in preview. Review a preview before
+promoting a production version.
 
-Preview the production build locally:
+## Domain setup
 
-```sh
-npm run preview
-```
+### Route A: no domain yet
+
+Use the free Worker subdomain returned by the first deployment. Set
+`PUBLIC_SITE_URL` to that origin and use it for Supabase Auth redirect URLs,
+Stripe return URLs and webhook, OpenRouter attribution, canonical URLs, and
+analytics data streams.
+
+### Route B: custom domain later
+
+1. Register a domain with a suitable registrar, transfer an eligible domain, or
+   keep the existing registrar. Cloudflare Registrar supports only its
+   available top-level domains; do not assume every TLD is offered.
+2. Add the domain as a Cloudflare zone. If Cloudflare will be authoritative,
+   update nameservers and wait for the zone to become active.
+3. Open **Workers & Pages → experiencehub → Settings → Domains & Routes → Add
+   → Custom Domain** and attach the chosen hostname. Cloudflare creates the DNS
+   record and certificate.
+4. Wait for DNS and SSL activation, then verify HTTPS on major routes.
+5. Update `PUBLIC_SITE_URL`, `SITE_URL`, Supabase redirect URLs, Stripe
+   settings, GA4, GTM, and provider allowlists; rebuild and redeploy.
+6. Choose either the apex or `www` as canonical. Add the other hostname as a
+   proxied DNS record and create one Cloudflare Redirect Rule to the canonical
+   hostname while preserving path and query.
+
+See Cloudflare's current [Worker Custom Domains guidance](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
+and [Workers Builds documentation](https://developers.cloudflare.com/workers/ci-cd/builds/).
+
+## Business email setup
+
+Website hosting and business email are separate services. Never commit mailbox
+passwords, app passwords, recovery codes, or administrator credentials.
+
+Paid mailbox options include Google Workspace, Microsoft 365, and email hosting
+from a domain provider. A lower-cost option is forwarding
+`info@yourdomain.example` to an existing inbox. Forwarding alone is not a full
+outgoing mailbox: replies normally leave from the destination address rather
+than the branded address. Cloudflare documents this in its
+[Email Routing guidance](https://developers.cloudflare.com/email-service/reference/postmaster/).
+
+For Google Workspace:
+
+1. Create the Workspace account and add the production domain.
+2. Verify domain ownership using Google's supplied DNS record in Cloudflare.
+3. Add the exact Google MX records shown in the Admin console and remove
+   conflicting MX records.
+4. Create the required mailbox, such as `info@...`.
+5. Publish the provider-approved SPF TXT record. Keep only one SPF record.
+6. Generate a DKIM key in Google Admin, add the supplied TXT record, then start
+   authentication.
+7. Add DMARC gradually: begin with monitoring and aggregate reports, review
+   legitimate senders, then tighten policy after SPF and DKIM consistently pass.
+8. Test external sending, receiving, replies, spam placement, SPF, DKIM, and
+   DMARC alignment.
+
+Use Google's current instructions for [MX records](https://support.google.com/a/answer/87127),
+[SPF](https://support.google.com/a/answer/33786), and
+[DKIM](https://support.google.com/a/answer/174124) instead of copying
+potentially outdated values into this repository.
+
+## Production SEO and operational checks
+
+- `PUBLIC_SITE_URL` drives canonical URLs, Open Graph URLs, sitemaps, RSS, and
+  Stripe return-origin validation. The reserved `.example` fallback is for
+  unconfigured builds only.
+- Astro's sitemap integration covers prerendered pages and Journal articles.
+  `/catalogue-sitemap.xml` lists the active runtime catalogue. `/robots.txt`
+  points crawlers to both.
+- `BaseLayout` supplies canonical, description, Open Graph, Twitter card,
+  favicon, and structured-data hooks. Package and Journal pages emit schema
+  data without invented ratings or availability.
+- `public/og.jpg` is a local 1200 × 630 social preview; the favicon is local.
+- Custom 404 and safe 500 pages expose no stack traces or secrets.
+- `trailingSlash: "never"` sets path consistency. A domain Redirect Rule sets
+  hostname consistency.
+- Validate representative structured data with Google's Rich Results Test or
+  Schema.org validator after a public URL exists.
+
+Before every production promotion:
+
+1. Run `npm ci` and `npm run build` with production public variables.
+2. Confirm sitemap and canonical hosts match production.
+3. Search tracked source and browser assets for credential patterns; verify
+   `.env`, `.dev.vars`, and `.wrangler` are ignored.
+4. Check navigation, forms, focus states, mobile-menu keyboard behavior, 404,
+   missing-image fallbacks, and representative internal links.
+5. Confirm no Google request occurs before consent and that GTM prevents direct
+   GA4 duplicate initialization.
+6. Confirm `PAYMENT_MODE=dummy` is visibly demonstrational unless an explicitly
+   tested Stripe configuration is being promoted.
+7. Confirm fictional New Zealand records retain demo/concept labels.
+8. Inspect build warnings, Worker logs, asset sizes, and browser network weight.
+   Do not log secrets, full payment payloads, or AI free text.
+9. Validate AI, checkout, and webhook failure paths before configured success
+   paths.
+
+The application uses system font stacks, so there is no render-blocking web
+font request. Content images provide dimensions, below-the-fold images are lazy
+loaded, responsive media frames prevent layout shift, and no UI framework or
+animation library is hydrated. Browser JavaScript stays focused on navigation,
+filters, consent, assistant, admin forms, and checkout behavior.
+
+## Git milestone history
+
+| Milestone | Delivered foundation |
+| --- | --- |
+| 1 | Astro, TypeScript, Tailwind, base layout, and homepage |
+| 2 | Premium responsive design and accessible navigation |
+| 3 | Validated multi-country architecture and routes |
+| 4 | Nepal and clearly fictional New Zealand catalogue |
+| 5 | SEO-focused Journal, RSS, and sitemap support |
+| 6 | Supabase catalogue layer, RLS schema, seed, and local fallback |
+| 7 | Supabase administrator authentication and authorization |
+| 8 | Secure Supabase Storage image workflow |
+| 9 | Focused catalogue administration dashboard |
+| 10 | Grounded server-only OpenRouter recommendation assistant |
+| 11 | Consent-aware GTM with direct GA4 fallback |
+| 12 | Dummy, Payment Link, and server-created Stripe checkout |
+| 13 | Cloudflare Workers production configuration and launch audit |
+
+## Current limitations and future expansion
+
+- No deployment is live until an authenticated Cloudflare account completes the
+  deployment steps and a production origin is configured.
+- Live Supabase Auth, Storage, OpenRouter, analytics, and Stripe flows require
+  operator-owned accounts and are never fabricated during local-only checks.
+- The AI rate limiter is per Worker isolate, not a distributed abuse control.
+- The verified Stripe webhook does not yet persist idempotent bookings,
+  fulfilment, expiry, refunds, or restaurant confirmation.
+- Public registration, customer accounts, multilingual content, inventory,
+  availability calendars, taxes, refunds, and transactional email are out of
+  scope.
+- The runtime catalogue sitemap follows Supabase changes after its short cache;
+  Journal changes still require a build.
+
+The recommended next milestone is a production booking lifecycle: an
+idempotent booking table keyed by Stripe event ID, restaurant confirmation,
+privacy-reviewed customer contact capture, transactional email, admin
+fulfilment controls, and sandbox-to-live release tests.
 
 ## Current milestone status
 
-Milestone 12 adds dummy checkout, validated Stripe Payment Links, trusted
-server-created Checkout Sessions, server-verified success status, cancellation
-handling, and a signature-verifying webhook scaffold. Booking persistence,
-fulfilment, refunds, public signup, service-role access, and conversation
-storage remain out of scope.
-
-Canonical metadata currently uses the reserved placeholder host
-`https://experiencehub.example`. Replace the `site` value in
-`astro.config.mjs` with the production domain before launch.
+Milestone 13 configures the hybrid application for Cloudflare Workers, adds
+production error and crawler routes, documents public and secret variables,
+provides preview and production commands, and completes domain, business-email,
+SEO, security, and performance launch guidance.
 
 ## Validation
 
-Each milestone is validated with `npm run build`. Milestone 12 additionally
-checks the full dummy flow, same-origin POST handling, arbitrary-package and
-arbitrary-price rejection, Payment Link host validation, server-only Stripe
-imports, webhook signature enforcement, no-secret browser bundles, and
-credential scans. Stripe sandbox checkout is tested only when explicit sandbox
-credentials and matching test catalogue configuration are available. Live
-credentials are never used without explicit instruction.
+Every milestone is validated with `npm run build`. Milestone 13 additionally
+validates Cloudflare runtime output, local Worker routes, dummy checkout,
+invalid AI input, webhook signature rejection, authentication redirects,
+catalogue and Journal links, sitemap and robots responses, secret-pattern
+absence from browser assets, analytics precedence, responsive navigation
+semantics, and production asset weight. Live provider success paths are tested
+only with operator-owned sandbox credentials; no connection or deployment is
+claimed without evidence.

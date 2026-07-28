@@ -5,36 +5,24 @@ import {
   isAllowedStripePaymentLink,
   type DeploymentPaymentMode,
 } from './payments';
+import {
+  getRuntimeEnvironment,
+  type RuntimeEnvironment,
+} from './runtime-env.server';
 
-export type PaymentRuntimeEnvironment = Record<string, string | undefined>;
-
-const buildEnvironment = {
-  paymentMode: import.meta.env.PAYMENT_MODE,
-  secretKey: import.meta.env.STRIPE_SECRET_KEY,
-  webhookSecret: import.meta.env.STRIPE_WEBHOOK_SECRET,
-  siteUrl: import.meta.env.PUBLIC_SITE_URL,
-};
+export type PaymentRuntimeEnvironment = RuntimeEnvironment;
 
 function readEnvironment(
-  key: keyof typeof buildEnvironment,
   runtimeName: string,
   runtimeEnvironment?: PaymentRuntimeEnvironment,
 ) {
-  return (
-    runtimeEnvironment?.[runtimeName]?.trim() ||
-    buildEnvironment[key]?.trim() ||
-    ''
-  );
+  return getRuntimeEnvironment(runtimeEnvironment)[runtimeName]?.trim() || '';
 }
 
 export function getDeploymentPaymentMode(
   runtimeEnvironment?: PaymentRuntimeEnvironment,
 ): DeploymentPaymentMode {
-  const mode = readEnvironment(
-    'paymentMode',
-    'PAYMENT_MODE',
-    runtimeEnvironment,
-  ).toLowerCase();
+  const mode = readEnvironment('PAYMENT_MODE', runtimeEnvironment).toLowerCase();
 
   return mode === 'payment-link' || mode === 'checkout-session'
     ? mode
@@ -57,29 +45,17 @@ export function getStripePaymentLink(packageEntry: PackageEntry) {
 }
 
 function getStripeSecretKey(runtimeEnvironment?: PaymentRuntimeEnvironment) {
-  const key = readEnvironment(
-    'secretKey',
-    'STRIPE_SECRET_KEY',
-    runtimeEnvironment,
-  );
+  const key = readEnvironment('STRIPE_SECRET_KEY', runtimeEnvironment);
   return /^sk_(test|live)_[A-Za-z0-9_]+$/.test(key) ? key : null;
 }
 
 function getWebhookSecret(runtimeEnvironment?: PaymentRuntimeEnvironment) {
-  const secret = readEnvironment(
-    'webhookSecret',
-    'STRIPE_WEBHOOK_SECRET',
-    runtimeEnvironment,
-  );
+  const secret = readEnvironment('STRIPE_WEBHOOK_SECRET', runtimeEnvironment);
   return /^whsec_[A-Za-z0-9_]+$/.test(secret) ? secret : null;
 }
 
 function getSiteOrigin(runtimeEnvironment?: PaymentRuntimeEnvironment) {
-  const value = readEnvironment(
-    'siteUrl',
-    'PUBLIC_SITE_URL',
-    runtimeEnvironment,
-  );
+  const value = readEnvironment('PUBLIC_SITE_URL', runtimeEnvironment);
   if (!value) return null;
 
   try {

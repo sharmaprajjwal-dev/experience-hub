@@ -10,7 +10,23 @@ const publicAdminRoutes = new Set([
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
-  if (pathname !== '/admin' && !pathname.startsWith('/admin/')) return next();
+  const finalizeResponse = (response: Response) => {
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set(
+      'Referrer-Policy',
+      'strict-origin-when-cross-origin',
+    );
+    response.headers.set(
+      'Permissions-Policy',
+      'camera=(), geolocation=(), microphone=(), payment=()',
+    );
+    return response;
+  };
+
+  if (pathname !== '/admin' && !pathname.startsWith('/admin/')) {
+    return finalizeResponse(await next());
+  }
   const normalizedPath =
     pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
 
@@ -26,7 +42,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     authResponseHeaders.forEach((value, name) => {
       response.headers.set(name, value);
     });
-    return response;
+    return finalizeResponse(response);
   };
 
   if (publicAdminRoutes.has(normalizedPath)) {

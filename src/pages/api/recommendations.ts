@@ -9,7 +9,7 @@ import {
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request }) => {
   const requestOrigin = new URL(request.url).origin;
   const origin = request.headers.get('Origin');
   if (
@@ -52,7 +52,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const recommendation = await recommendPackages({
     graph,
     preferences: validation.preferences,
-    runtimeEnvironment: locals.runtime?.env,
   });
 
   if (!recommendation.ok) {

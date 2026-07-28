@@ -5,6 +5,10 @@ import {
   getExperienceForPackage,
   getRestaurantForExperience,
 } from './content';
+import {
+  getRuntimeEnvironment,
+  type RuntimeEnvironment,
+} from './runtime-env.server';
 
 const OPENROUTER_ENDPOINT =
   'https://openrouter.ai/api/v1/chat/completions';
@@ -12,13 +16,6 @@ const REQUEST_TIMEOUT_MS = 12_000;
 const MAX_CONTEXT_PACKAGES = 100;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_REQUESTS = 5;
-
-const buildEnvironment = {
-  apiKey: import.meta.env.OPENROUTER_API_KEY,
-  model: import.meta.env.OPENROUTER_MODEL,
-  siteUrl: import.meta.env.SITE_URL,
-  siteName: import.meta.env.SITE_NAME,
-};
 
 const rateLimits = new Map<
   string,
@@ -36,10 +33,7 @@ export interface RecommendationPreferences {
   details?: string;
 }
 
-export type RecommendationRuntimeEnvironment = Record<
-  string,
-  string | undefined
->;
+export type RecommendationRuntimeEnvironment = RuntimeEnvironment;
 
 interface GroundedPackage {
   slug: string;
@@ -338,26 +332,16 @@ export async function recommendPackages({
 function getOpenRouterConfiguration(
   platformEnvironment?: RecommendationRuntimeEnvironment,
 ) {
-  const processEnvironment = (
-    globalThis as typeof globalThis & {
-      process?: { env?: Record<string, string | undefined> };
-    }
-  ).process?.env;
-  const read = (
-    name: keyof typeof buildEnvironment,
-    runtimeName: string,
-  ) =>
-    platformEnvironment?.[runtimeName]?.trim() ||
-    processEnvironment?.[runtimeName]?.trim() ||
-    buildEnvironment[name]?.trim() ||
-    '';
+  const runtimeEnvironment = getRuntimeEnvironment(platformEnvironment);
+  const read = (runtimeName: string) =>
+    runtimeEnvironment[runtimeName]?.trim() || '';
 
-  const siteUrl = read('siteUrl', 'SITE_URL');
+  const siteUrl = read('SITE_URL');
   return {
-    apiKey: read('apiKey', 'OPENROUTER_API_KEY'),
-    model: read('model', 'OPENROUTER_MODEL'),
+    apiKey: read('OPENROUTER_API_KEY'),
+    model: read('OPENROUTER_MODEL'),
     siteUrl: isHttpUrl(siteUrl) ? siteUrl : '',
-    siteName: read('siteName', 'SITE_NAME')
+    siteName: read('SITE_NAME')
       .replace(/[\r\n]/g, ' ')
       .slice(0, 100),
   };

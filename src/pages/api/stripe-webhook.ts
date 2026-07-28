@@ -3,7 +3,7 @@ import { verifyWebhookEvent } from '../../lib/payments.server';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request }) => {
   const signature = request.headers.get('Stripe-Signature');
   if (!signature) return json({ error: 'Missing Stripe signature.' }, 400);
 
@@ -22,7 +22,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const verification = await verifyWebhookEvent({
     payload,
     signature,
-    runtimeEnvironment: locals.runtime?.env,
   });
 
   if (!verification.ok) {

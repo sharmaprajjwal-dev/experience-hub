@@ -1,0 +1,33 @@
+---
+import ButtonLink from '../components/ButtonLink.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Page not found | ExperienceHub"
+  description="The requested ExperienceHub page could not be found."
+  robots="noindex, nofollow"
+>
+  <SiteHeader />
+  <main class="section-shell">
+    <div class="site-container">
+      <section class="mx-auto max-w-2xl rounded-[1.5rem] border border-line bg-surface p-7 sm:p-12">
+        <p class="eyebrow">404 · Page not found</p>
+        <h1 class="mt-5 font-display text-5xl tracking-[-0.04em]">
+          This path is not on the menu.
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-muted">
+          The page may have moved, or the experience may no longer be active.
+          Return home or browse the current collection.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <ButtonLink href="/experiences">Explore experiences</ButtonLink>
+          <ButtonLink href="/" variant="secondary">Return home</ButtonLink>
+        </div>
+      </section>
+    </div>
+  </main>
+  <SiteFooter />
+</BaseLayout>

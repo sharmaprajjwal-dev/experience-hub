@@ -26,7 +26,7 @@ const {
   modifiedTime,
   author,
   ogImage = '/og.jpg',
-  ogImageAlt = 'ExperienceHub Journal — considered dining guides and curated experiences',
+  ogImageAlt = 'ExperienceHub — curated dining experiences in remarkable destinations',
   robots,
   structuredData,
 } = Astro.props;
@@ -54,6 +54,8 @@ const analyticsConfiguration = getAnalyticsConfiguration();
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content="ExperienceHub" />
+    <meta property="og:locale" content="en_NZ" />
     {canonical && <meta property="og:url" content={canonical} />}
     <meta property="og:image" content={socialImage} />
     <meta property="og:image:alt" content={ogImageAlt} />
@@ -62,6 +64,7 @@ const analyticsConfiguration = getAnalyticsConfiguration();
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImage} />
     <meta name="twitter:image:alt" content={ogImageAlt} />
+    <meta name="theme-color" content="#f4f0e8" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <link
       rel="alternate"

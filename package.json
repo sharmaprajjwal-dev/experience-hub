@@ -11,10 +11,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "cf:dev": "npm run build && wrangler dev",
+    "cf:types": "wrangler types",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:preview": "npm run build && wrangler versions upload",
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/node": "^11.0.2",
+    "@astrojs/cloudflare": "^14.1.5",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "@supabase/ssr": "^0.12.3",
@@ -23,5 +27,8 @@
     "astro": "^7.1.4",
     "stripe": "^22.3.2",
     "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.114.0"
   }
 }

@@ -9,7 +9,7 @@ import {
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, locals, redirect }) => {
+export const POST: APIRoute = async ({ request, redirect }) => {
   const requestOrigin = new URL(request.url).origin;
   const origin = request.headers.get('Origin');
   if (
@@ -54,12 +54,8 @@ export const POST: APIRoute = async ({ request, locals, redirect }) => {
     return redirect('/checkout/cancel?reason=package-unavailable', 303);
   }
 
-  const runtimeEnvironment = locals.runtime?.env;
-  const deploymentMode = getDeploymentPaymentMode(runtimeEnvironment);
-  const action = getPaymentActionForPackage(
-    packageEntry,
-    runtimeEnvironment,
-  );
+  const deploymentMode = getDeploymentPaymentMode();
+  const action = getPaymentActionForPackage(packageEntry);
 
   if (deploymentMode === 'dummy') {
     return redirect(`/book/${packageEntry.data.slug}`, 303);
@@ -78,7 +74,6 @@ export const POST: APIRoute = async ({ request, locals, redirect }) => {
   if (action.kind === 'checkout-session') {
     const session = await createCheckoutSession({
       packageEntry,
-      runtimeEnvironment,
     });
     return session.ok
       ? redirect(session.url, 303)

@@ -6,6 +6,8 @@ import type {
 } from '@supabase/supabase-js';
 
 interface ImportMetaEnv {
+  readonly PUBLIC_SUPABASE_URL?: string;
+  readonly PUBLIC_SUPABASE_ANON_KEY?: string;
   readonly PUBLIC_GA_MEASUREMENT_ID?: string;
   readonly PUBLIC_GTM_CONTAINER_ID?: string;
   readonly PUBLIC_SITE_URL?: string;
@@ -28,9 +30,6 @@ declare global {
     interface Locals {
       supabase?: SupabaseClient;
       adminUser?: Pick<User, 'id' | 'email'>;
-      runtime?: {
-        env?: Record<string, string | undefined>;
-      };
     }
   }
 }

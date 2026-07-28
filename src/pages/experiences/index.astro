@@ -46,9 +46,7 @@ const featuredItems = catalogueItems.filter(
 const experienceTypes = [
   ...new Set(catalogueItems.map(({ experience }) => experience.data.type)),
 ].sort();
-const assistantConfigured = isRecommendationAssistantConfigured(
-  Astro.locals.runtime?.env,
-);
+const assistantConfigured = isRecommendationAssistantConfigured();
 ---
 
 <BaseLayout title={title} description={description}>

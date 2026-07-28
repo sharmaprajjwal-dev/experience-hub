@@ -52,10 +52,7 @@ const relatedPackages = graph.packages.filter(
 const title = `${packageEntry.data.name} at ${restaurant.data.name} | ExperienceHub`;
 const description = `${packageEntry.data.shortDescription} View placeholder pricing, inclusions, guest guidance, duration, and booking information.`;
 const canonicalPath = `/packages/${packageEntry.data.slug}`;
-const paymentAction = getPaymentActionForPackage(
-  packageEntry,
-  Astro.locals.runtime?.env,
-);
+const paymentAction = getPaymentActionForPackage(packageEntry);
 const siteBase = Astro.site ?? Astro.url;
 const structuredData = [
   {
