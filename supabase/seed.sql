@@ -299,58 +299,25 @@ on conflict (slug) do update set
 -- Use local, credited Unsplash assets for the live catalogue while retaining
 -- image_path for future administrator-managed Supabase Storage uploads.
 update public.countries
-set
-  hero_image = case slug
-    when 'nepal' then '/images/nepal-table-unsplash.jpg'
-    when 'new-zealand' then '/images/new-zealand-dining-unsplash.jpg'
-    else hero_image
-  end,
-  image_alt = case slug
-    when 'nepal' then 'A generous table of Nepalese dishes shared with friends'
-    when 'new-zealand' then 'An elegant, warmly lit dining room illustrating the fictional Auckland concept'
-    else image_alt
-  end,
-  image_width = 1600,
-  image_height = case slug
-    when 'new-zealand' then 2093
-    else 1200
-  end
+set hero_image = case slug
+  when 'nepal' then '/images/nepal-table-unsplash.jpg'
+  when 'new-zealand' then '/images/new-zealand-dining-unsplash.jpg'
+  else hero_image
+end
 where slug in ('nepal', 'new-zealand');
 
 update public.restaurants
-set
-  hero_image = case slug
-    when 'the-pizza-house' then '/images/nepal-table-unsplash.jpg'
-    when 'harbour-and-pine' then '/images/new-zealand-dining-unsplash.jpg'
-    else hero_image
-  end,
-  image_alt = case slug
-    when 'the-pizza-house' then 'A generous table of Nepalese dishes; illustrative dining photography'
-    when 'harbour-and-pine' then 'An elegant, warmly lit dining room illustrating the fictional Harbour and Pine concept'
-    else image_alt
-  end,
-  image_width = 1600,
-  image_height = case slug
-    when 'harbour-and-pine' then 2093
-    else 1200
-  end
+set hero_image = case slug
+  when 'the-pizza-house' then '/images/nepal-table-unsplash.jpg'
+  when 'harbour-and-pine' then '/images/new-zealand-dining-unsplash.jpg'
+  else hero_image
+end
 where slug in ('the-pizza-house', 'harbour-and-pine');
 
 update public.experiences
-set
-  hero_image = case slug
-    when 'signature-brunch-experience' then '/images/nepal-table-unsplash.jpg'
-    when 'harbourlight-dinner-for-two' then '/images/new-zealand-dining-unsplash.jpg'
-    else hero_image
-  end,
-  image_alt = case slug
-    when 'signature-brunch-experience' then 'A generous table of Nepalese dishes gathered for sharing; illustrative dining photography'
-    when 'harbourlight-dinner-for-two' then 'An elegant, warmly lit dining room illustrating this fictional couple dinner concept'
-    else image_alt
-  end,
-  image_width = 1600,
-  image_height = case slug
-    when 'harbourlight-dinner-for-two' then 2093
-    else 1200
-  end
+set hero_image = case slug
+  when 'signature-brunch-experience' then '/images/nepal-table-unsplash.jpg'
+  when 'harbourlight-dinner-for-two' then '/images/new-zealand-dining-unsplash.jpg'
+  else hero_image
+end
 where slug in ('signature-brunch-experience', 'harbourlight-dinner-for-two');
